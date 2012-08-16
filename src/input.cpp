@@ -25,6 +25,7 @@
 #include "config.h"
 #include "console.h"
 #include <cstring>
+#include <stdlib.h>
 
 Keybindings * keybindings;
 Commandlist * commandlist;
@@ -68,7 +69,7 @@ Input::Input()
 	mode = INPUT_MODE_COMMAND;
 	chbuf = 0;
 	multiplier = 0;
-	strbuf.clear();
+	wstrbuf.clear();
 	buffer.clear();
 	is_tab_completing = false;
 	is_option_tab_completing = false;
@@ -91,8 +92,11 @@ Inputevent * Input::next()
 {
 	int m;
 
-	if ((chbuf = getch()) == ERR)
+	get_wch(&chbuf);
+	if (chbuf == ERR)
+	{
 		return NULL;
+	}
 
 	ev.clear();
 
@@ -117,7 +121,8 @@ Inputevent * Input::next()
 			}
 
 			buffer.push_back(chbuf);
-			strbuf.push_back(chbuf);
+			wstrbuf.push_back(chbuf);
+			conv_to_mbs();
 			m = keybindings->find(wm->context, &buffer, &ev.action, &strbuf);
 
 			if (m == KEYBIND_FIND_EXACT)
@@ -127,7 +132,7 @@ Inputevent * Input::next()
 			else if (m == KEYBIND_FIND_NOMATCH)
 			{
 				buffer.clear();
-				strbuf.clear();
+				wstrbuf.clear();
 				multiplier = 0;
 			}
 
@@ -143,6 +148,7 @@ Inputevent * Input::next()
 
 	if (ev.result != INPUT_RESULT_NOINPUT)
 	{
+		conv_to_mbs();
 		ev.context = wm->context;
 		ev.text = strbuf;
 		ev.multiplier = multiplier > 0 ? multiplier : 1;
@@ -150,7 +156,7 @@ Inputevent * Input::next()
 		if (ev.result != INPUT_RESULT_BUFFERED && ev.result != INPUT_RESULT_MULTIPLIER)
 		{
 			buffer.clear();
-			strbuf.clear();
+			wstrbuf.clear();
 			if (ev.action != ACT_MODE_INPUT)
 				multiplier = 0;
 		}
@@ -185,7 +191,7 @@ void Input::tr_chbuf()
 void Input::handle_text_input()
 {
 	option_t * opt;
-	string::iterator si;
+	wstring::iterator si;
 	size_t fpos;
 	size_t pos;
 
@@ -205,7 +211,7 @@ void Input::handle_text_input()
 			return;
 
 		case KEY_RIGHT:
-			if (cursorpos < strbuf.size())
+			if (cursorpos < wstrbuf.size())
 				++cursorpos;
 			ev.result = INPUT_RESULT_BUFFERED;
 			return;
@@ -218,7 +224,7 @@ void Input::handle_text_input()
 
 		case 5:			/* ^E */
 		case KEY_END:
-			cursorpos = strbuf.size();
+			cursorpos = wstrbuf.size();
 			ev.result = INPUT_RESULT_BUFFERED;
 			return;
 
@@ -238,7 +244,7 @@ void Input::handle_text_input()
 			if (cursorpos > 0)
 			{
 				buffer.erase(vector<int>::iterator(buffer.begin()), vector<int>::iterator(buffer.begin() + cursorpos));
-				strbuf.erase(string::iterator(strbuf.begin()), string::iterator(strbuf.begin() + cursorpos));
+				wstrbuf.erase(wstring::iterator(wstrbuf.begin()), wstring::iterator(wstrbuf.begin() + cursorpos));
 			}
 			cursorpos = 0;
 			ev.result = INPUT_RESULT_BUFFERED;
@@ -255,7 +261,7 @@ void Input::handle_text_input()
 				if (cursorpos > 0)
 				{
 					buffer.erase(--vector<int>::iterator(buffer.begin() + cursorpos));
-					strbuf.erase(--string::iterator(strbuf.begin() + cursorpos));
+					wstrbuf.erase(--wstring::iterator(wstrbuf.begin() + cursorpos));
 					if (cursorpos > 0)
 						--cursorpos;
 				}
@@ -270,13 +276,13 @@ void Input::handle_text_input()
 
 		case 9:			/* Tab */
 			/* Tabcomplete options instead of commands */
-			if ((strbuf.size() >= 3 && strbuf.substr(0, 3) == "se ") ||
-				(strbuf.size() >= 4 && strbuf.substr(0, 4) == "set "))
+			if ((wstrbuf.size() >= 3 && wstrbuf.substr(0, 3) == L"se ") ||
+				(wstrbuf.size() >= 4 && wstrbuf.substr(0, 4) == L"set "))
 			{
-				fpos = strbuf.find(' ') + 1;
+				fpos = wstrbuf.find(L' ') + 1;
 
 				/* No equal sign given, cycle through options */
-				if ((pos = strbuf.find('=', fpos)) == string::npos)
+				if ((pos = wstrbuf.find(L'=', fpos)) == wstring::npos)
 				{
 					if (is_option_tab_completing)
 					{
@@ -285,6 +291,7 @@ void Input::handle_text_input()
 					}
 					else
 					{
+						conv_to_mbs();
 						config->grep_opt(strbuf.substr(fpos), &option_tab_results, &option_tab_prefix);
 						if (option_tab_results.size() > 0)
 						{
@@ -296,16 +303,24 @@ void Input::handle_text_input()
 					if (is_option_tab_completing)
 					{
 						if ((opt = option_tab_results[option_tab_complete_index]) != NULL)
+						{
+							conv_to_mbs();
 							strbuf = strbuf.substr(0, fpos) + option_tab_prefix + opt->name;
+							conv_to_wcs();
+						}
 					}
 				}
 
 				/* Equal sign found, print option if none given. */
-				else if (pos + 1 == strbuf.size())
+				else if (pos + 1 == wstrbuf.size())
 				{
+					conv_to_mbs();
 					opt = config->get_opt_ptr(strbuf.substr(fpos, pos - fpos));
 					if (opt && opt->type != OPTION_TYPE_BOOL)
+					{
 						strbuf = strbuf + config->get_opt_str(opt);
+						conv_to_wcs();
+					}
 				}
 
 			}
@@ -320,6 +335,7 @@ void Input::handle_text_input()
 				}
 				else
 				{
+					conv_to_mbs();
 					tab_results = commandlist->grep(wm->context, strbuf);
 					if (tab_results->size() > 0)
 					{
@@ -330,13 +346,15 @@ void Input::handle_text_input()
 
 				if (is_tab_completing)
 				{
+					conv_to_mbs();
 					strbuf = tab_results->at(tab_complete_index)->name;
+					conv_to_wcs();
 				}
 			}
 
 			/* Sync binary input buffer with string buffer */
 			buffer.clear();
-			for (si = strbuf.begin(); si != strbuf.end(); ++si)
+			for (si = wstrbuf.begin(); si != wstrbuf.end(); ++si)
 				buffer.push_back(*si);
 
 			cursorpos = buffer.size();
@@ -350,7 +368,7 @@ void Input::handle_text_input()
 				return;
 
 			buffer.insert(vector<int>::iterator(buffer.begin() + cursorpos), chbuf);
-			strbuf.insert(string::iterator(strbuf.begin() + cursorpos), chbuf);
+			wstrbuf.insert(wstring::iterator(wstrbuf.begin() + cursorpos), chbuf);
 			++cursorpos;
 			ev.result = INPUT_RESULT_BUFFERED;
 	}
@@ -361,7 +379,7 @@ void Input::setmode(int nmode)
 	if (nmode == mode)
 		return;
 	
-	strbuf.clear();
+	wstrbuf.clear();
 	buffer.clear();
 	chbuf = 0;
 	cursorpos = 0;
@@ -371,4 +389,18 @@ void Input::setmode(int nmode)
 		curs_set(0);
 	else
 		curs_set(1);
+}
+
+size_t Input::conv_to_mbs()
+{
+	size_t r = wcstombs(mbs_buffer, wstrbuf.c_str(), 1024);
+	strbuf = mbs_buffer;
+	return r;
+}
+
+size_t Input::conv_to_wcs()
+{
+	size_t r = mbstowcs(wcs_buffer, strbuf.c_str(), 1024);
+	wstrbuf = wcs_buffer;
+	return r;
 }

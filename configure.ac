@@ -14,8 +14,8 @@ AC_PROG_CC
 
 # Checks for libraries.
 AX_WITH_CURSES
-if test "x$ax_cv_ncursesw" != xyes && test "x$ax_cv_ncurses" != xyes; then
-    AC_MSG_ERROR([requires either NcursesW or Ncurses library])
+if test "x$ax_cv_ncursesw" != xyes; then
+    AC_MSG_ERROR([requires ncurses with wide character support])
 fi
 
 # Checks for header files.

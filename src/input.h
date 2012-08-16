@@ -106,7 +106,11 @@ class Keybindings
 class Input
 {
 	private:
-		int			chbuf;
+		/* Used for conversion from/to wide character */
+		char			mbs_buffer[1024];
+		wchar_t			wcs_buffer[1024];
+
+		wint_t			chbuf;
 		bool			is_tab_completing;
 		bool			is_option_tab_completing;
 		string			option_tab_prefix;
@@ -130,12 +134,17 @@ class Input
 		int		mode;
 		unsigned long	multiplier;
 		vector<int> 	buffer;
+		wstring		wstrbuf;
 		string		strbuf;
 
 		Input();
 
 		/* Read next character from ncurses buffer */
 		Inputevent *	next();
+
+		/* Convert from/to wide-string */
+		size_t		conv_to_mbs();
+		size_t		conv_to_wcs();
 
 		/* Setter and getter for mode */
 		void		setmode(int nmode);
