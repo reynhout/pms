@@ -19,7 +19,6 @@
  */
 
 #include "input.h"
-#include "curses.h"
 #include "command.h"
 #include "window.h"
 #include "config.h"

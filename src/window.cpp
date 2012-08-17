@@ -19,19 +19,66 @@
  */
 
 #include <math.h>
+#include <string.h>
 #include "window.h"
-#include "curses.h"
 #include "config.h"
 
 extern Windowmanager * wm;
-extern Curses * curses;
 extern Config * config;
+
+Window::Window()
+{
+	window = NULL;
+	memset(&rect, 0, sizeof rect);
+}
+
+void Window::set_dimensions(int top, int left, int bottom, int right)
+{
+	if (window) {
+		delwin(window);
+	}
+	rect.top = top;
+	rect.left = left;
+	rect.bottom = bottom;
+	rect.right = right;
+	window = newwin(bottom-top+1, right-left+1, top, left);
+}
+
+void Window::flush()
+{
+	wrefresh(window);
+}
+
+void Window::print(Color * c, int y, int x, const char * fmt, ...)
+{
+	va_list			ap;
+	char			buffer[1024];
+
+	if (!c) {
+		return;
+	}
+	
+	va_start(ap, fmt);
+	vsprintf(buffer, fmt, ap);
+	va_end(ap);
+
+	wattron(window, c->pair);
+	mvwprintw(window, y, x, buffer);
+	wattroff(window, c->pair);
+}
+
+void Window::clearline(int line, Color * c)
+{
+	wattron(window, c->pair | A_INVIS);
+	mvwhline(window, line, rect.left, ' ', rect.right - rect.left);
+	wattroff(window, c->pair | A_INVIS);
+}
 
 void Window::draw()
 {
 	unsigned int i, h;
 
-	if (!rect || !visible())
+	if (!visible())
 		return;
 
 	need_draw = false;
@@ -40,6 +87,9 @@ void Window::draw()
 
 	for (i = 0; i <= h; i++)
 		drawline(i);
+
+	/*FIXME*/
+	wrefresh(window);
 }
 
 void Window::qdraw()
@@ -49,13 +99,19 @@ void Window::qdraw()
 
 void Window::clear()
 {
-	curses->wipe(rect, config->colors.standard);
+	wclear(window);
+}
+
+void Window::clear(Color * c)
+{
+	wclear(window);
+	/*FIXME*/
+	//clear(config->colors.standard);
 }
 
 unsigned int Window::height()
 {
-	if (!rect) return 0;
-	return rect->bottom - rect->top;
+	return rect.bottom - rect.top;
 }
 
 Wmain::Wmain()
@@ -66,19 +122,18 @@ Wmain::Wmain()
 
 unsigned int Wmain::height()
 {
-	if (!rect) return 0;
-	return rect->bottom - rect->top - (config->show_window_title ? 1 : 0);
+	return rect.bottom - rect.top - (config->show_window_title ? 1 : 0);
 }
 
 void Wmain::draw()
 {
-	if (!rect || !visible())
+	if (!visible())
 		return;
 
 	if (config->show_window_title)
 	{
-		curses->clearline(rect, 0, config->colors.windowtitle);
-		curses->print(rect, config->colors.windowtitle, 0, 0, title.c_str());
+		clearline(0, config->colors.windowtitle);
+		print(config->colors.windowtitle, 0, 0, title.c_str());
 	}
 
 	Window::draw();
@@ -97,12 +152,12 @@ void Wmain::scroll_window(int offset)
 	if (offset < 0)
 	{
 		offset = 0;
-		curses->bell();
+		wm->bell();
 	}
 	if (offset > limit)
 	{
 		offset = limit;
-		curses->bell();
+		wm->bell();
 	}
 	
 	if ((int)position == offset)
@@ -137,12 +192,12 @@ void Wmain::move_cursor(int offset)
 	if (offset < 0)
 	{
 		offset = 0;
-		curses->bell();
+		wm->bell();
 	}
 	else if (offset > (int)content_size() - 1)
 	{
 		offset = content_size() - 1;
-		curses->bell();
+		wm->bell();
 	}
 
 	if ((int)cursor == offset)

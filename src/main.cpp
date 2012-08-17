@@ -34,7 +34,6 @@
 #include <sys/time.h>
 
 Fieldtypes *	fieldtypes;
-Curses *	curses;
 Config *	config;
 MPD *		mpd;
 Windowmanager *	wm;
@@ -51,31 +50,22 @@ int main(int argc, char *argv[])
 
 	setlocale(LC_ALL, "");
 
-	curses = new Curses();
-	if (!curses->ready)
-	{
-		perror("Fatal: failed to initialise ncurses.\n");
-		return 1;
-	}
-
 	fieldtypes = new Fieldtypes();
 	keybindings = new Keybindings();
 	commandlist = new Commandlist();
-	config = new Config();
 	mpd = new MPD();
 	input = new Input();
-	wm = new Windowmanager();
-	wm->activate(WMAIN(wm->console));
-
 	pms = new PMS();
+	wm = new Windowmanager();
+	wm->init_ncurses();
+	config = new Config();
+
+	wm->detect_dimensions();
+	wm->activate(WMAIN(wm->console));
+	stinfo("%s", PACKAGE_STRING);
 	config->source_default_config();
 
-	curses->detect_dimensions();
-
-	stinfo("%s", PACKAGE_STRING);
-
 	memset(&conn, 0, sizeof conn);
-	curses->detect_dimensions();
 	wm->playlist->songlist = &(mpd->playlist);
 	wm->library->songlist = &(mpd->library);
 	wm->draw();
@@ -125,5 +115,5 @@ int main(int argc, char *argv[])
 		pms->run_event(input->next());
 	}
 
-	delete curses;
+	delete wm;
 }

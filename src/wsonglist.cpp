@@ -20,7 +20,6 @@
 
 #include "window.h"
 #include "songlist.h"
-#include "curses.h"
 #include "config.h"
 #include "mpd.h"
 #include "field.h"
@@ -30,7 +29,6 @@
 
 using namespace std;
 
-extern Curses * curses;
 extern Config * config;
 extern MPD * mpd;
 extern Windowmanager * wm;
@@ -40,16 +38,16 @@ void Wsonglist::draw()
 	unsigned int x = 0, i, it;
 	string wtitle;
 
-	if (!rect || !visible())
+	if (!visible())
 		return;
 
 	if (config->show_column_headers)
 	{
 		i = config->show_window_title ? 1 : 0;
-		curses->clearline(rect, i, config->colors.columnheader);
+		clearline(i, config->colors.columnheader);
 		for (it = 0; it < column_len.size(); ++it)
 		{
-			curses->print(rect, config->colors.columnheader, i, x, config->songlist_columns[it]->title.c_str());
+			print(config->colors.columnheader, i, x, config->songlist_columns[it]->title.c_str());
 			x += column_len[it] + 1;
 		}
 	}
@@ -59,8 +57,8 @@ void Wsonglist::draw()
 		wtitle = title;
 		if (songlist->searchresult)
 			wtitle += "  <<search results>>";
-		curses->clearline(rect, 0, config->colors.windowtitle);
-		curses->print(rect, config->colors.windowtitle, 0, 0, wtitle.c_str());
+		clearline(0, config->colors.windowtitle);
+		print(config->colors.windowtitle, 0, 0, wtitle.c_str());
 	}
 
 	Window::draw();
@@ -82,9 +80,9 @@ void Wsonglist::drawline(int rely)
 	if (config->show_column_headers)
 		++rely;
 
-	if (!songlist || rely + rect->top > rect->bottom || linepos >= songlist->size())
+	if (!songlist || rely + rect.top > rect.bottom || linepos >= songlist->size())
 	{
-		curses->clearline(rect, rely, config->colors.standard);
+		clearline(rely, config->colors.standard);
 		return;
 	}
 
@@ -103,11 +101,11 @@ void Wsonglist::drawline(int rely)
 	else
 		color = NULL;
 
-	curses->clearline(rect, rely, color ? color : config->colors.standard);
+	clearline(rely, color ? color : config->colors.standard);
 
 	for (it = 0; it < column_len.size(); ++it)
 	{
-		curses->print(rect, color ? color : config->colors.field[config->songlist_columns[it]->type], rely, x, song->f[config->songlist_columns[it]->type].c_str());
+		print(color ? color : config->colors.field[config->songlist_columns[it]->type], rely, x, song->f[config->songlist_columns[it]->type].c_str());
 		x += column_len[it] + 1;
 	}
 }
@@ -147,7 +145,6 @@ selection_t Wsonglist::get_selection(long multiplier)
 
 unsigned int Wsonglist::height()
 {
-	if (!rect) return 0;
 	return Wmain::height() - (config->show_column_headers ? 1 : 0);
 }
 
@@ -173,10 +170,10 @@ void Wsonglist::update_column_length()
 
 	column_len.clear();
 
-	if (!rect || !songlist)
+	if (!songlist)
 		return;
 
-	max = rect->right - rect->left - config->songlist_columns.size() + 1;
+	max = rect.right - rect.left - config->songlist_columns.size() + 1;
 
 	for (column = config->songlist_columns.begin(); column != config->songlist_columns.end(); ++column)
 	{

@@ -20,7 +20,6 @@
 
 #include "console.h"
 #include "window.h"
-#include "curses.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <string>
@@ -30,7 +29,6 @@
 using namespace std;
 
 vector<Logline *> logbuffer;
-extern Curses * curses;
 extern Windowmanager * wm;
 
 Logline::Logline(int lvl, const char * ln)
@@ -52,7 +50,7 @@ void console_log(int level, const char * format, ...)
 	logbuffer.push_back(new Logline(level, buffer));
 
 	/* Make it possible to log stuff before window system is brought up */
-	if (wm->console == NULL)
+	if (!wm || wm->console == NULL)
 		return;
 
 	if (wm->console->position == wm->console->content_size() - wm->console->height() - 2)

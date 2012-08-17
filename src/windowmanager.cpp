@@ -22,14 +22,18 @@
 #include "curses.h"
 #include "command.h"
 #include "mpd.h"
+#include "color.h"
 #include "config.h"
 #include "input.h"
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <cstring>
+#include <stdlib.h>
+#include <math.h>
+
 using namespace std;
 
-extern Curses * curses;
 extern MPD * mpd;
 extern Config * config;
 extern Input * input;
@@ -38,25 +42,61 @@ Windowmanager::Windowmanager()
 {
 	/* Setup static windows that are not in the window list */
 	topbar = new Wtopbar;
-	topbar->set_rect(&curses->topbar);
 	statusbar = new Wstatusbar;
-	statusbar->set_rect(&curses->statusbar);
 	readout = new Wreadout;
-	readout->set_rect(&curses->readout);
 
 	/* Setup static windows that appear in the window list */
 	console = new Wconsole;
-	console->set_rect(&curses->main);
 	console->title = "Console";
 	playlist = new Wsonglist;
-	playlist->set_rect(&curses->main);
 	playlist->title = "Playlist";
 	library = new Wsonglist;
-	library->set_rect(&curses->main);
 	library->title = "Library";
 	windows.push_back(WMAIN(console));
 	windows.push_back(WMAIN(playlist));
 	windows.push_back(WMAIN(library));
+}
+
+void Windowmanager::init_ncurses()
+{
+	if ((initscr()) == NULL)
+	{
+		ready = false;
+		return;
+	}
+
+	noecho();
+	raw();
+	nodelay(stdscr, true);
+	keypad(stdscr, true);
+	curs_set(0);
+
+	if (has_colors())
+	{
+		start_color();
+		use_default_colors();
+	}
+}
+
+Windowmanager::~Windowmanager()
+{
+	clear();
+	refresh();
+	endwin();
+}
+
+void Windowmanager::detect_dimensions()
+{
+	vector<Wmain *>::iterator wit;
+
+	topbar->set_dimensions(0, 0, config->topbar_height-1, COLS);
+	statusbar->set_dimensions(LINES-1, 0, LINES-1, COLS-4);
+	readout->set_dimensions(LINES-1, COLS-3, LINES-1, COLS);
+	wit = windows.begin();
+	while (wit != windows.end()) {
+		(*wit)->set_dimensions(config->topbar_height, 0, LINES-2, COLS);
+		++wit;
+	}
 }
 
 void Windowmanager::draw()
@@ -65,7 +105,6 @@ void Windowmanager::draw()
 	statusbar->draw();
 	readout->draw();
 	active->draw();
-
 	flush();
 }
 
@@ -90,7 +129,16 @@ void Windowmanager::qdraw()
 
 void Windowmanager::flush()
 {
-	curses->flush();
+	vector<Wmain *>::iterator wit;
+
+	topbar->flush();
+	statusbar->flush();
+	readout->flush();
+	wit = windows.begin();
+	while (wit != windows.end()) {
+		(*wit)->flush();
+		++wit;
+	}
 }
 
 bool Windowmanager::activate(Wmain * nactive)
@@ -175,7 +223,6 @@ void Windowmanager::cycle(int offset)
 
 	active->draw();
 	readout->draw();
-	curses->flush();
 }
 
 void Windowmanager::update_column_length()
@@ -186,5 +233,22 @@ void Windowmanager::update_column_length()
 	{
 		if ((w = WSONGLIST(*i)) != NULL)
 			w->update_column_length();
+	}
+}
+
+void Windowmanager::bell()
+{
+	if (!config->use_bell)
+		return;
+	
+	if (config->visual_bell)
+	{
+		if (flash() == ERR)
+			beep();
+	}
+	else
+	{
+		if (beep() == ERR)
+			flash();
 	}
 }

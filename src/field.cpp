@@ -22,7 +22,6 @@
 #include "song.h"
 #include "mpd.h"
 #include "config.h"
-#include "curses.h"
 #include "window.h"
 #include <vector>
 #include <string>
@@ -30,7 +29,6 @@ using namespace std;
 
 extern MPD * mpd;
 extern Config * config;
-extern Curses * curses;
 extern Windowmanager * wm;
 
 Field::Field(field_t nfield, string name, string mpd_name, string tit, unsigned int minl, unsigned int maxl)
@@ -69,7 +67,7 @@ string Field::format(Song * song)
 			tmp.clear();
 			if (mpd->status.length == -1 || mpd->status.elapsed == -1)
 				return tmp;
-			i = mpd->status.elapsed * (curses->topbar.right - curses->topbar.left) / mpd->status.length;
+			i = mpd->status.elapsed * (wm->topbar->rect.right - wm->topbar->rect.left) / mpd->status.length;
 			while (i-- >= 0)
 				tmp += '=';
 			tmp += '>';

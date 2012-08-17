@@ -20,13 +20,11 @@
 
 #include "window.h"
 #include "config.h"
-#include "curses.h"
 #include "topbar.h"
 #include "field.h"
 #include "mpd.h"
 
 extern Config * config;
-extern Curses * curses;
 extern Topbar * topbar;
 extern MPD * mpd;
 
@@ -39,12 +37,12 @@ void Wtopbar::drawline(int rely)
 	int x;
 	unsigned int strl;
 
-	if (!rect || rely < 0 || rely > (int)height())
+	if (rely < 0 || rely > (int)height())
 		return;
 
 	y = (unsigned int)rely;
 
-	curses->clearline(rect, y, config->colors.topbar);
+	clearline(y, config->colors.topbar);
 
 	/* Cycle left, center, right */
 	for (pos = 0; pos < 3; pos++)
@@ -61,16 +59,16 @@ void Wtopbar::drawline(int rely)
 		if (pos == 0)
 			x = 0;
 		else if (pos == 1)
-			x = ((rect->right - rect->left) / 2) - (strl / 2);
+			x = ((rect.right - rect.left) / 2) - (strl / 2);
 		else if (pos == 2)
-			x = rect->right - rect->left - strl + 1;
+			x = rect.right - rect.left - strl + 1;
 
 		/* Iterate through segments and draw them */
 		for (seg = topbar->lines[pos].at(y)->segments.begin(); seg != topbar->lines[pos].at(y)->segments.end(); ++seg)
 		{
 			for (chunk = (*seg)->chunks.begin(); chunk != (*seg)->chunks.end(); ++chunk)
 			{
-				curses->print(rect, (*chunk)->color, rely, x, (*chunk)->str.c_str());
+				print((*chunk)->color, rely, x, (*chunk)->str.c_str());
 				x += (*chunk)->str.size();
 			}
 		}

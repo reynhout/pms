@@ -21,7 +21,23 @@
 #ifndef _PMS_WINDOW_H_
 #define _PMS_WINDOW_H_
 
-#include "curses.h"
+#include "../build.h"
+
+#if defined HAVE_NCURSESW_CURSES_H
+	#include <ncursesw/curses.h>
+#elif defined HAVE_NCURSESW_H
+	#include <ncursesw.h>
+#elif defined HAVE_NCURSES_CURSES_H
+	#include <ncurses/curses.h>
+#elif defined HAVE_NCURSES_H
+	#include <ncurses.h>
+#elif defined HAVE_CURSES_H
+	#include <curses.h>
+#else
+	#error "SysV or X/Open-compatible Curses header file required"
+#endif
+
+#include "color.h"
 #include "songlist.h"
 #include "command.h"
 #include <sys/time.h>
@@ -34,14 +50,28 @@ using namespace std;
 #define WMAIN(x)	dynamic_cast<Wmain *>(x)
 #define WSONGLIST(x)	dynamic_cast<Wsonglist *>(x)
 
+typedef struct
+{
+	int	left;
+	int	top;
+	int	right;
+	int	bottom;
+}
+Rect;
+
 class Window
 {
 	protected:
-		Rect *		rect;
+		WINDOW *	window;
 
 	public:
+		Window();
+
+		Rect		rect;
 		bool		need_draw;
-		void		set_rect(Rect * r) { rect = r; };
+
+		/* Set dimensions and update ncurses window */
+		void		set_dimensions(int top, int left, int bottom, int right);
 
 		/* Window height */
 		unsigned int	height();
@@ -52,8 +82,13 @@ class Window
 		/* Queue draw until next tick */
 		void		qdraw();
 
+		/* Flush to ncurses */
+		void		flush();
+
 		/* Clear this window */
 		void		clear();
+		void		clear(Color * c);
+		void		clearline(int y, Color * c);
 
 		/* Is this window visible? */
 		virtual bool	visible() { return true; };
@@ -61,6 +96,8 @@ class Window
 		/* Draw one line on rect */
 		virtual void	drawline(int y) = 0;
 
+		/* Draw text somewhere */
+		void		print(Color * c, int y, int x, const char * fmt, ...);
 };
 
 class Wmain : public Window
@@ -176,9 +213,16 @@ class Windowmanager
 	
 	public:
 		Windowmanager();
+		~Windowmanager();
+
+		/* What kind of input events are accepted right now */
+		bool			ready;
 
 		/* What kind of input events are accepted right now */
 		int			context;
+
+		/* Initialize ncurses stuff */
+		void			init_ncurses();
 
 		/* Redraw all visible windows */
 		void			draw();
@@ -194,6 +238,12 @@ class Windowmanager
 
 		/* Activate a window */
 		bool			activate(Wmain * nactive);
+
+		/* Set left/right/top/bottom layout for all panels */
+		void			detect_dimensions();
+
+		/* Trigger the bell */
+		void			bell();
 
 		/* Activate the last used window */
 		bool			toggle();

@@ -20,7 +20,6 @@
 
 #include "window.h"
 #include "console.h"
-#include "curses.h"
 #include "input.h"
 #include "config.h"
 #include "mpd.h"
@@ -32,7 +31,6 @@
 using namespace std;
 
 extern vector<Logline *> logbuffer;
-extern Curses * curses;
 extern Windowmanager * wm;
 extern Input * input;
 extern Config * config;
@@ -49,7 +47,7 @@ void Wstatusbar::drawline(int rely)
 	Wsonglist * ws;
 	string pstr;
 	size_t vscroll = 0;
-	size_t width = rect->right - rect->left;
+	size_t width = rect.right - rect.left;
 	vector<Logline *>::reverse_iterator i;
 	Color * c;
 
@@ -75,21 +73,21 @@ void Wstatusbar::drawline(int rely)
 					if ((ws = WSONGLIST(wm->active)) != NULL && ws->songlist->visual_start != -1)
 					{
 						pstr = "-- VISUAL --";
-						curses->wipe(rect, config->colors.statusbar);
-						curses->print(rect, config->colors.statusbar, rely, 0, pstr.c_str());
+						clear(config->colors.statusbar);
+						print(config->colors.statusbar, rely, 0, pstr.c_str());
 						break;
 					}
 					cl_isreset = true;
-					curses->wipe(rect, config->colors.statusbar);
-					curses->print(rect, config->colors.statusbar, rely, 0, mpd->playstring.c_str());
+					clear(config->colors.statusbar);
+					print(config->colors.statusbar, rely, 0, mpd->playstring.c_str());
 					break;
 				}
 
 				/* Draw last statusbar message */
 				cl_isreset = false;
 				c = (*i)->level == MSG_LEVEL_ERR ? config->colors.error : config->colors.statusbar;
-				curses->wipe(rect, c);
-				curses->print(rect, c, rely, 0, (*i)->line.c_str());
+				clear(c);
+				print(c, rely, 0, (*i)->line.c_str());
 				break;
 			}
 			break;
@@ -101,7 +99,7 @@ void Wstatusbar::drawline(int rely)
 				vscroll = input->strbuf.size() - width;
 			if (vscroll > input->cursorpos)
 				vscroll = input->cursorpos;
-			curses->wipe(rect, config->colors.standard);
+			clear(config->colors.standard);
 
 			if (input->mode == INPUT_MODE_INPUT)
 				pstr = ":";
@@ -110,9 +108,9 @@ void Wstatusbar::drawline(int rely)
 			else if (input->mode == INPUT_MODE_LIVESEARCH)
 				pstr = "/";
 
-			curses->print(rect, config->colors.statusbar, rely, 0, pstr.c_str());
-			curses->print(rect, config->colors.statusbar, rely, pstr.size(), input->strbuf.substr(vscroll).c_str());
-			curses->setcursor(rect, rely, input->cursorpos - vscroll + pstr.size());
+			print(config->colors.statusbar, rely, 0, pstr.c_str());
+			print(config->colors.statusbar, rely, pstr.size(), input->strbuf.substr(vscroll).c_str());
+			wmove(window, rely, input->cursorpos - vscroll + pstr.size());
 			break;
 	}
 }
@@ -133,5 +131,5 @@ void Wreadout::drawline(int rely)
 	else
 		sprintf(buf, "%2d", 100 * win->position / (win->content_size() - win->height() - 1));
 
-	curses->print(rect, config->colors.readout, 0, 0, "%s%%%%", buf);
+	print(config->colors.readout, 0, 0, "%s%%%%", buf);
 }

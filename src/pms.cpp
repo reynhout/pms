@@ -20,7 +20,6 @@
 
 #include "pms.h"
 #include "console.h"
-#include "curses.h"
 #include "config.h"
 #include "window.h"
 #include "command.h"
@@ -33,7 +32,6 @@
 
 extern Config		* config;
 extern MPD		* mpd;
-extern Curses		* curses;
 extern Windowmanager	* wm;
 extern Input		* input;
 extern Commandlist 	* commandlist;
@@ -131,7 +129,7 @@ int PMS::run_event(Inputevent * ev)
 			return quit();
 
 		case ACT_RESIZE:
-			curses->detect_dimensions();
+			wm->detect_dimensions();
 			wm->playlist->update_column_length();
 			wm->library->update_column_length();
 			wm->draw();
@@ -248,7 +246,7 @@ int PMS::run_event(Inputevent * ev)
 	else if (ev->result == INPUT_RESULT_BUFFERED)
 	{
 		wm->statusbar->draw();
-		curses->flush();
+		wm->flush();
 		wm->topbar->qdraw();
 
 		if (input->mode == INPUT_MODE_LIVESEARCH)
@@ -386,7 +384,7 @@ int PMS::set_opt(Inputevent * ev)
 	if (opt->mask & OPT_CHANGE_MPD)
 		mpd->apply_opts();
 	if (opt->mask & OPT_CHANGE_DIMENSIONS)
-		curses->detect_dimensions();
+		wm->detect_dimensions();
 	if (opt->mask & OPT_CHANGE_PLAYMODE)
 	{
 		mpd->update_playstring();
@@ -408,7 +406,7 @@ int PMS::set_opt(Inputevent * ev)
 			return true;
 	}
 
-	curses->flush();
+	wm->flush();
 
 	return true;
 }
@@ -595,7 +593,7 @@ int PMS::livesearch(string terms, bool exitsearch)
 		win->songlist->liveclear();
 		input->setmode(INPUT_MODE_COMMAND);
 		wm->statusbar->qdraw();
-		curses->flush();
+		wm->flush();
 	}
 
 	if (song && (i = win->songlist->sfind(song->fhash)) != string::npos)
