@@ -1,7 +1,7 @@
-/* vi:set ts=8 sts=8 sw=8 noet:
+/* vi:set ts=4 sts=4 sw=4 noet:
  *
  * Practical Music Search
- * Copyright (c) 2006-2011  Kim Tore Jensen
+ * Copyright (c) 2006-2013 Kim Tore Jensen
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,36 +15,50 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
  */
 
-#ifndef _PMS_CONSOLE_H_
-#define _PMS_CONSOLE_H_
+/**
+ * Initialize the console.
+ */
+void console_init(unsigned int max_lines);
 
-#include <string>
-#include <sys/time.h>
-using namespace std;
+/**
+ * Get string at array position n
+ */
+const char * console_get_line(unsigned int n);
 
-#define MSG_LEVEL_ERR 0
-#define MSG_LEVEL_WARN 1
-#define MSG_LEVEL_INFO 2
-#define MSG_LEVEL_DEBUG 3
+/**
+ * Print formatted string to console.
+ */
+void console(const char * format, ...);
 
-class Logline
-{
-	public:
-		Logline(int lvl, const char * ln);
+/**
+ * Draw a number of lines on the console window.
+ */
+void console_draw_lines(long start, long end);
 
-		struct timeval tm;
-		int level;
-		string line;
-};
+/**
+ * Scroll console up or down. A positive integer means move content that amount
+ * of lines upwards, negative integers move content downwards.
+ *
+ * @return amount of lines that need to be drawn. If amount is positive, draw
+ * that many lines from top. If amount is negative, draw that many lines from
+ * bottom.
+ */
+int console_scroll(long delta);
 
-/* Log a message to stderr */
-void console_log(int level, const char * format, ...);
+/**
+ * Shared properties in a Window.
+ */
+typedef struct {
 
-#define debug(_fmt, ...)	console_log(MSG_LEVEL_DEBUG, _fmt, __VA_ARGS__)
-#define stinfo(_fmt, ...)	console_log(MSG_LEVEL_INFO, _fmt, __VA_ARGS__)
-#define sterr(_fmt, ...)	console_log(MSG_LEVEL_ERR, _fmt, __VA_ARGS__)
+	/* Scroll position - top item */
+	long position;
 
-#endif /* _PMS_CONSOLE_H_ */
+	/* Cursor position */
+	long cursor;
+
+	/* Height in lines */
+	int height;
+
+} window_t;
