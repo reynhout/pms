@@ -23,27 +23,24 @@
 #include <stdarg.h>
 #include <sys/time.h>
 #include "pms.h"
-#include "console.h"
-#include "curses.h"
 
-static char ** lines = NULL;
+extern WINDOW * window_main;
+
+static logline_t ** lines = NULL;
 static unsigned int line_cursor = 0;
 static unsigned int line_limit = 0;
 static unsigned int first_line = 0;
-static unsigned int num_lines = 0;
 static int full = 0;
 
 pthread_mutex_t console_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-extern WINDOW * window_main;
 
 window_t * console_window = NULL;
 
 void console_init(unsigned int max_lines) {
 	if (lines != NULL) {
-		lines = realloc(lines, max_lines * sizeof(char *));
+		lines = realloc(lines, max_lines * sizeof(logline_t *));
 	} else {
-		lines = malloc(max_lines * sizeof(char *));
+		lines = malloc(max_lines * sizeof(logline_t *));
 	}
 	if (lines == NULL) {
 		fatal(PMS_EXIT_MEMORY, "out of memory\n");
@@ -55,30 +52,34 @@ void console_init(unsigned int max_lines) {
 		}
 		// TODO: move into resize func
 		console_window->height = LINES - 2;
+		console_window->num_lines = 0;
 	}
 	line_limit = max_lines;
-	memset(lines, 0, max_lines * sizeof(char *));
+	memset(lines, 0, max_lines * sizeof(logline_t *));
 }
 
-const char * console_get_line(unsigned int n) {
+logline_t * console_get_line(unsigned int n) {
 	n = (n + first_line) % line_limit;
 	return lines[n];
 }
 
 void console(const char * format, ...) {
+	logline_t *	line;
+	time_t		t;
+	int			changed;
 	va_list		ap;
 	char *		buffer;
 	char *		existing;
 
 	pthread_mutex_lock(&console_mutex);
 
-	buffer = malloc(512);
+	line = malloc(sizeof(logline_t *));
 	va_start(ap, format);
-	vsnprintf(buffer, 512, format, ap);
+	vsnprintf(line->str, 512, format, ap);
 	va_end(ap);
 
 	if (lines[line_cursor] != NULL) {
-		free(lines[line_cursor]);
+		free_logline(lines[line_cursor]);
 	}
 
 	if (full) {
@@ -87,21 +88,23 @@ void console(const char * format, ...) {
 			first_line = 0;
 		}
 	} else {
-		++num_lines;
+		++console_window->num_lines;
 	}
 
-	lines[line_cursor] = buffer;
+	t = time(NULL);
+	line->timestamp = localtime(&t);
+	strftime(line->ts, 10, "%H:%M:%S", line->timestamp);
+
+	lines[line_cursor] = line;
 
 	if (++line_cursor >= line_limit) {
 		line_cursor = 0;
 		full = 1;
 	}
 
-	int changed = console_scroll(1);
-	if (changed > 0) {
-		console_draw_lines(console_window->height - changed, console_window->height);
-	} else if (changed == 0) {
-		console_draw_lines(num_lines - 1, num_lines - 1);
+	/* Scroll window if at bottom. */
+	if (console_window->num_lines < console_window->height || console_window->position + console_window->height + 1 >= console_window->num_lines) {
+		console_scroll(1);
 	}
 
 	pthread_mutex_unlock(&console_mutex);
@@ -111,13 +114,15 @@ void console_draw_lines(long start, long end) {
 
 	long s;
 	long ptr = console_window->position;
+	logline_t * line;
 
 	ptr += start;
 	for (s = start; s <= end; s++) {
-		if (ptr >= num_lines) {
+		if (ptr >= console_window->num_lines) {
 			break;
 		}
-		mvwprintw(window_main, s, 0, "%d %s", time(NULL), console_get_line(ptr));
+		line = console_get_line(ptr);
+		mvwprintw(window_main, s, 0, "%s: %s", line->ts, line->str);
 		++ptr;
 	}
 
@@ -125,29 +130,17 @@ void console_draw_lines(long start, long end) {
 }
 
 int console_scroll(long delta) {
-	long npos;
-
-	if (num_lines <= console_window->height) {
-		return 0;
+	int changed = window_scroll(console_window, delta);
+	if (changed > 0) {
+		console_draw_lines(console_window->height - changed, console_window->height);
+	} else if (changed < 0) {
+		console_draw_lines(0, -changed - 1);
+	} else {
+		console_draw_lines(console_window->num_lines - 1, console_window->num_lines - 1);
 	}
+	return changed;
+}
 
-	if (delta > 0) {
-		npos = console_window->position + delta;
-		if (npos + console_window->height > num_lines) {
-			delta = num_lines - console_window->height - console_window->position;
-			// TODO: beep?
-		}
-	} else if (delta < 0) {
-		npos = console_window->position - delta;
-		if (npos < 0) {
-			delta = -console_window->position;
-			// TODO: beep?
-		}
-	}
-
-	console_window->position += delta;
-	wscrl(window_main, delta);
-	wrefresh(window_main);
-
-	return delta;
+void free_logline(logline_t * line) {
+	free(line->ts);
 }

@@ -26,6 +26,10 @@
 #include <pthread.h>
 #include <stdarg.h>
 
+#include "curses.h"
+#include "window.h"
+#include "console.h"
+
 #define PMS_EXIT_SUCCESS 0
 #define PMS_EXIT_MEMORY 1
 #define PMS_EXIT_NCURSES 2

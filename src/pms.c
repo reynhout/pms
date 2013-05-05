@@ -4,8 +4,6 @@
 #include <string.h>
 #include <signal.h>
 #include "pms.h"
-#include "console.h"
-#include "curses.h"
 
 struct options_t * options = NULL;
 struct pms_state_t * state = NULL;
@@ -115,18 +113,11 @@ int main(int argc, char** argv) {
 
     curses_init();
     console_init(options->console_size);
-    //pms_start_threads();
+    pms_start_threads();
     signal_init();
-
-    int i;
-    for (i = 1; i <= 54; i++) {
-        console("line %d", i);
-    }
 
     while(state->running) {
         curses_get_input();
-        console("line %d", i);
-        ++i;
     }
 
     curses_shutdown();

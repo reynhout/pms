@@ -18,7 +18,6 @@
  */
 
 #include "pms.h"
-#include "curses.h"
 #include <stdlib.h>
 
 WINDOW * window_topbar;
@@ -83,6 +82,10 @@ void curses_shutdown() {
 static void curses_handle_input(int ch) {
 	if (ch == 'q') {
 		shutdown();
+	} else if (ch == KEY_UP) {
+		console_scroll(-1);
+	} else if (ch == KEY_DOWN) {
+		console_scroll(1);
 	}
 }
 

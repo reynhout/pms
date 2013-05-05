@@ -18,6 +18,16 @@
  */
 
 /**
+ * Console log line data structure.
+ */
+typedef struct {
+	char str[512];
+	char ts[10];
+	int verbosity;
+	struct tm * timestamp;
+} logline_t;
+
+/**
  * Initialize the console.
  */
 void console_init(unsigned int max_lines);
@@ -25,7 +35,7 @@ void console_init(unsigned int max_lines);
 /**
  * Get string at array position n
  */
-const char * console_get_line(unsigned int n);
+logline_t * console_get_line(unsigned int n);
 
 /**
  * Print formatted string to console.
@@ -38,27 +48,13 @@ void console(const char * format, ...);
 void console_draw_lines(long start, long end);
 
 /**
- * Scroll console up or down. A positive integer means move content that amount
- * of lines upwards, negative integers move content downwards.
+ * Scroll console up or down.
  *
- * @return amount of lines that need to be drawn. If amount is positive, draw
- * that many lines from top. If amount is negative, draw that many lines from
- * bottom.
+ * @see window_scroll@window.h
  */
 int console_scroll(long delta);
 
 /**
- * Shared properties in a Window.
+ * Free memory for a log line.
  */
-typedef struct {
-
-	/* Scroll position - top item */
-	long position;
-
-	/* Cursor position */
-	long cursor;
-
-	/* Height in lines */
-	int height;
-
-} window_t;
+void free_logline(logline_t * line);
