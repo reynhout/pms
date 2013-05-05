@@ -22,11 +22,14 @@
 extern WINDOW * window_main;
 
 int window_scroll(window_t * window, long delta) {
+
 	long npos;
 
 	if (window->num_lines <= window->height) {
 		return 0;
 	}
+
+    pms_curses_lock();
 
 	if (delta > 0) {
 		npos = window->position + delta;
@@ -46,5 +49,8 @@ int window_scroll(window_t * window, long delta) {
 	wscrl(window_main, delta);
 	wrefresh(window_main);
 
+    pms_curses_unlock();
+
 	return delta;
+
 }

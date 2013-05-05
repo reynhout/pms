@@ -25,7 +25,9 @@
 #include "pms.h"
 
 struct options_t * options = NULL;
-struct pms_state_t * state = NULL;
+struct pms_state_t * pms_state = NULL;
+
+static pthread_mutex_t status_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void reset_options() {
 
@@ -55,13 +57,14 @@ void fatal(int exitcode, const char * format, ...) {
 
 void shutdown() {
 	console("Shutting down.");
-	state->running = 0;
+	pms_state->running = 0;
 }
 
-enum mpd_error pms_mpd_connect(struct mpd_connection * connection) {
+static struct mpd_connection * pms_mpd_connect() {
 
 	enum mpd_error status;
 	const char * error_msg;
+	struct mpd_connection * connection;
 
 	console("Connecting to %s...", options->server);
 
@@ -80,30 +83,43 @@ enum mpd_error pms_mpd_connect(struct mpd_connection * connection) {
 		connection = NULL;
 	}
 	
-	return status;
+	return connection;
 }
 
-void pms_get_mpd_initial_state(struct mpd_connection * connection) {
+static void pms_get_mpd_initial_state(struct mpd_connection * connection) {
 
-	struct mpd_status * status;
-	status = mpd_run_status(connection);
+	pms_status_lock();
+	if (pms_state->status) {
+		mpd_status_free(pms_state->status);
+	}
+	pms_state->status = mpd_run_status(connection);
+	pms_status_unlock();
 
 }
 
-void * pms_thread_mpd(void * threadid) {
+static void * pms_thread_mpd(void * threadid) {
 
 	struct mpd_connection * connection = NULL;
-	enum mpd_idle flags;
+	enum mpd_idle flags = 0;
 
-	pms_mpd_connect(connection);
-	pms_get_mpd_initial_state(connection);
+	connection = pms_mpd_connect();
 
-	while(state->running) {
+	while(pms_state->running) {
 		if (connection) {
-			mpd_send_idle(connection);
-			flags = mpd_recv_idle(connection, false);
-			console("mpd_recv_idle(): flags=%d");
+			if (pms_state->status != NULL && flags == 0) {
+				mpd_send_idle(connection);
+				flags = mpd_recv_idle(connection, false);
+				if (flags == 0) {
+					console("No IDLE response, sleeping...");
+					sleep(1);
+				}
+			} else {
+				console("pms_get_mpd_initial_state");
+				pms_get_mpd_initial_state(connection);
+				topbar_draw();
+			}
 		} else {
+			console("No connection, sleeping...");
 			sleep(1);
 		}
 	}
@@ -112,18 +128,10 @@ void * pms_thread_mpd(void * threadid) {
 
 }
 
-void * pms_thread_display(void * threadid) {
-	pthread_exit(NULL);
-}
-
 static void pms_start_threads() {
 	pthread_t thread_mpd;
-	pthread_t thread_display;
 	if (pthread_create(&thread_mpd, NULL, pms_thread_mpd, NULL)) {
 		fatal(PMS_EXIT_THREAD, "Cannot create MPD thread\n");
-	}
-	if (pthread_create(&thread_display, NULL, pms_thread_display, NULL)) {
-		fatal(PMS_EXIT_THREAD, "Cannot create display thread\n");
 	}
 }
 
@@ -149,15 +157,17 @@ static void signal_init() {
 int main(int argc, char** argv) {
 
 	reset_options();
-	state = malloc(sizeof(struct pms_state_t));
-	state->running = true;
+	pms_state = malloc(sizeof(struct pms_state_t));
+	memset(pms_state, 0, sizeof(struct pms_state_t));
+	pms_state->running = true;
 
 	curses_init();
 	console_init(options->console_size);
-	pms_start_threads();
 	signal_init();
+	console("%s %s (c) 2006-2013 Kim Tore Jensen <%s>", PACKAGE_NAME, PACKAGE_VERSION, PACKAGE_BUGREPORT);
+	pms_start_threads();
 
-	while(state->running) {
+	while(pms_state->running) {
 		curses_get_input();
 	}
 
@@ -166,3 +176,10 @@ int main(int argc, char** argv) {
 	return PMS_EXIT_SUCCESS;
 }
 
+void pms_status_lock() {
+	pthread_mutex_lock(&status_mutex);
+}
+
+void pms_status_unlock() {
+	pthread_mutex_unlock(&status_mutex);
+}

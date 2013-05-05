@@ -17,44 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * Console log line data structure.
- */
-typedef struct {
-	char * str;
-	char * ts;
-	int verbosity;
-	struct tm * timestamp;
-} logline_t;
+#include <mpd/client.h>
 
-/**
- * Initialize the console.
- */
-void console_init(unsigned int max_lines);
-
-/**
- * Get string at array position n
- */
-logline_t * console_get_line(unsigned int n);
-
-/**
- * Print formatted string to console.
- */
-void console(const char * format, ...);
-
-/**
- * Draw a number of lines on the console window.
- */
-void console_draw_lines(long start, long end);
-
-/**
- * Scroll console up or down.
- *
- * @see window_scroll@window.h
- */
-int console_scroll(long delta);
-
-/**
- * Free memory for a log line.
- */
-void free_logline(logline_t * line);
+void topbar_draw();
+const char * topbar_mode_str();
+const char * topbar_playing_str();

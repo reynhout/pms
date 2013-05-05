@@ -74,6 +74,8 @@ void console(const char * format, ...) {
 	pthread_mutex_lock(&console_mutex);
 
 	line = malloc(sizeof(logline_t *));
+	line->str = malloc(512);
+	line->ts = malloc(9);
 	va_start(ap, format);
 	vsnprintf(line->str, 512, format, ap);
 	va_end(ap);
@@ -93,7 +95,7 @@ void console(const char * format, ...) {
 
 	t = time(NULL);
 	line->timestamp = localtime(&t);
-	strftime(line->ts, 10, "%H:%M:%S", line->timestamp);
+	strftime(line->ts, 9, "%H:%M:%S", line->timestamp);
 
 	lines[line_cursor] = line;
 
@@ -113,10 +115,12 @@ void console(const char * format, ...) {
 void console_draw_lines(long start, long end) {
 
 	long s;
-	long ptr = console_window->position;
+	long ptr;
 	logline_t * line;
 
-	ptr += start;
+    pms_curses_lock();
+
+	ptr = console_window->position + start;
 	for (s = start; s <= end; s++) {
 		if (ptr >= console_window->num_lines) {
 			break;
@@ -127,10 +131,14 @@ void console_draw_lines(long start, long end) {
 	}
 
 	wrefresh(window_main);
+
+    pms_curses_unlock();
 }
 
 int console_scroll(long delta) {
+
 	int changed = window_scroll(console_window, delta);
+
 	if (changed > 0) {
 		console_draw_lines(console_window->height - changed, console_window->height);
 	} else if (changed < 0) {
@@ -138,9 +146,12 @@ int console_scroll(long delta) {
 	} else {
 		console_draw_lines(console_window->num_lines - 1, console_window->num_lines - 1);
 	}
+
 	return changed;
 }
 
 void free_logline(logline_t * line) {
+	free(line->str);
 	free(line->ts);
+	free(line->timestamp);
 }

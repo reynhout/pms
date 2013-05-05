@@ -24,7 +24,7 @@ WINDOW * window_topbar;
 WINDOW * window_main;
 WINDOW * window_statusbar;
 
-pthread_mutex_t curses_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t curses_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void curses_destroy_windows() {
 	if (window_topbar) {

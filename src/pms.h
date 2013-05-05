@@ -25,10 +25,12 @@
 
 #include <pthread.h>
 #include <stdarg.h>
+#include <mpd/client.h>
 
 #include "curses.h"
 #include "window.h"
 #include "console.h"
+#include "topbar.h"
 
 #define PMS_EXIT_SUCCESS 0
 #define PMS_EXIT_MEMORY 1
@@ -47,6 +49,7 @@ struct options_t {
 struct pms_state_t {
     /* Set to false when shutting down. */
     int running;
+	struct mpd_status * status;
 };
 
 /**
@@ -58,3 +61,13 @@ void fatal(int exitcode, const char * format, ...);
  * Exit program.
  */
 void shutdown();
+
+/**
+ * Lock MPD status object
+ */
+void pms_status_lock();
+
+/**
+ * Lock MPD status object
+ */
+void pms_status_unlock();
