@@ -38,5 +38,5 @@ void curses_shutdown();
 void curses_init_windows();
 void curses_destroy_windows();
 
-void curses_thread_lock();
-void curses_thread_unlock();
+void pms_curses_lock();
+void pms_curses_unlock();

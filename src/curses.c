@@ -97,10 +97,10 @@ void curses_get_input() {
 	}
 }
 
-void curses_thread_lock() {
+void pms_curses_lock() {
 	pthread_mutex_lock(&curses_mutex);
 }
 
-void curses_thread_unlock() {
+void pms_curses_unlock() {
 	pthread_mutex_unlock(&curses_mutex);
 }
