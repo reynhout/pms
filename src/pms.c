@@ -35,7 +35,7 @@ void fatal(int exitcode, const char * format, ...) {
 }
 
 void shutdown() {
-    console("Shutting down...");
+    console("Shutting down.");
     state->running = 0;
 }
 
@@ -99,10 +99,15 @@ void signal_resize(int signal) {
     curses_thread_unlock();
 }
 
+void signal_kill(int signal) {
+    fatal(PMS_EXIT_KILLED, "Killed by signal %d\n", signal);
+}
+
 static void signal_init() {
     if (signal(SIGWINCH, signal_resize) == SIG_ERR) {
         console("Error in signal_init(): window resizing will not work!");
     }
+    signal(SIGTERM, signal_kill);
 }
 
 int main(int argc, char** argv) {

@@ -17,44 +17,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "build.h"
+#include "pms.h"
 
-#ifndef HAVE_PTHREAD
-	#error "POSIX thread library required."
-#endif
+extern WINDOW * window_main;
 
-#include <pthread.h>
-#include <stdarg.h>
+int window_scroll(window_t * window, long delta) {
+	long npos;
 
-#include "curses.h"
-#include "window.h"
-#include "console.h"
+	if (window->num_lines <= window->height) {
+		return 0;
+	}
 
-#define PMS_EXIT_SUCCESS 0
-#define PMS_EXIT_MEMORY 1
-#define PMS_EXIT_NCURSES 2
-#define PMS_EXIT_THREAD 3
-#define PMS_EXIT_KILLED 4
+	if (delta > 0) {
+		npos = window->position + delta;
+		if (npos + window->height > window->num_lines) {
+			delta = window->num_lines - window->height - window->position;
+			// TODO: beep?
+		}
+	} else if (delta < 0) {
+		npos = window->position - delta - 2;
+		if (npos < 0) {
+			delta = -window->position;
+			// TODO: beep?
+		}
+	}
 
-struct options_t {
-    char * server;
-    unsigned int port;
-    unsigned int timeout;
-    unsigned int console_size;
+	window->position += delta;
+	wscrl(window_main, delta);
+	wrefresh(window_main);
 
-};
-
-struct pms_state_t {
-    /* Set to false when shutting down. */
-    int running;
-};
-
-/**
- * Shut down program with fatal error.
- */
-void fatal(int exitcode, const char * format, ...);
-
-/**
- * Exit program.
- */
-void shutdown();
+	return delta;
+}

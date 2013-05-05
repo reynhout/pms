@@ -17,44 +17,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "build.h"
+/**
+ * Shared properties in a window.
+ */
+typedef struct {
 
-#ifndef HAVE_PTHREAD
-	#error "POSIX thread library required."
-#endif
+	/* Scroll position - top item */
+	long position;
 
-#include <pthread.h>
-#include <stdarg.h>
+	/* Cursor position */
+	long cursor;
 
-#include "curses.h"
-#include "window.h"
-#include "console.h"
+	/* Height in lines */
+	int height;
 
-#define PMS_EXIT_SUCCESS 0
-#define PMS_EXIT_MEMORY 1
-#define PMS_EXIT_NCURSES 2
-#define PMS_EXIT_THREAD 3
-#define PMS_EXIT_KILLED 4
+    /* Number of lines in list */
+    int num_lines;
 
-struct options_t {
-    char * server;
-    unsigned int port;
-    unsigned int timeout;
-    unsigned int console_size;
+    /* Ncurses WINDOW */
+    WINDOW * window;
 
-};
-
-struct pms_state_t {
-    /* Set to false when shutting down. */
-    int running;
-};
+} window_t;
 
 /**
- * Shut down program with fatal error.
+ * Scroll console up or down. A positive integer means move content that amount
+ * of lines upwards, negative integers move content downwards.
+ *
+ * @return amount of lines that need to be drawn. If amount is positive, draw
+ * that many lines from top. If amount is negative, draw that many lines from
+ * bottom.
  */
-void fatal(int exitcode, const char * format, ...);
-
-/**
- * Exit program.
- */
-void shutdown();
+int window_scroll(window_t * window, long delta);
