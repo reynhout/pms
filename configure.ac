@@ -4,9 +4,10 @@
 AC_PREREQ([2.69])
 AC_INIT([pms],[0.50],[kimtjen@gmail.com])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
-AC_COPYRIGHT(Copyright (c) 2006-2013 Kim Tore Jensen)
+AC_COPYRIGHT(Copyright (c) 2006-2014 Kim Tore Jensen)
 AC_CONFIG_SRCDIR([src/pms.c])
 AC_CONFIG_HEADERS([build.h])
+AC_CONFIG_MACRO_DIR([m4])
 
 # Checks for programs.
 AC_PROG_CC
@@ -32,6 +33,8 @@ AC_C_INLINE
 AC_TYPE_SIZE_T
 
 # Checks for library functions.
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
 AC_CHECK_FUNCS([gettimeofday memset select setlocale socket])
 
 AC_CONFIG_FILES([Makefile src/Makefile])
