@@ -52,6 +52,7 @@ void console_init(unsigned int max_lines) {
 		}
 		// TODO: move into resize func
 		console_window->height = LINES - 2;
+		console_window->position = 0;
 		console_window->num_lines = 0;
 	}
 	line_limit = max_lines;
@@ -73,9 +74,14 @@ void console(const char * format, ...) {
 
 	pthread_mutex_lock(&console_mutex);
 
-	line = malloc(sizeof(logline_t *));
+	line = malloc(sizeof(logline_t));
 	line->str = malloc(512);
 	line->ts = malloc(9);
+
+	if (line->str == NULL || line->ts == NULL) {
+		fatal(PMS_EXIT_MEMORY, "Out of memory");
+	}
+
 	va_start(ap, format);
 	vsnprintf(line->str, 512, format, ap);
 	va_end(ap);
@@ -94,8 +100,8 @@ void console(const char * format, ...) {
 	}
 
 	t = time(NULL);
-	line->timestamp = localtime(&t);
-	strftime(line->ts, 9, "%H:%M:%S", line->timestamp);
+	localtime_r(&t, &line->timestamp);
+	strftime(line->ts, 9, "%H:%M:%S", &line->timestamp);
 
 	lines[line_cursor] = line;
 
@@ -153,5 +159,4 @@ int console_scroll(long delta) {
 void free_logline(logline_t * line) {
 	free(line->str);
 	free(line->ts);
-	free(line->timestamp);
 }

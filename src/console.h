@@ -24,7 +24,7 @@ typedef struct {
 	char * str;
 	char * ts;
 	int verbosity;
-	struct tm * timestamp;
+	struct tm timestamp;
 } logline_t;
 
 /**
