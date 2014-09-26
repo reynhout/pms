@@ -17,3 +17,8 @@ src/.deps/
 src/Makefile.in
 src/*.o
 stamp-h1
+compile
+config.guess
+config.sub
+debug/
+m4/pkg.m4
