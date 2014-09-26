@@ -86,6 +86,8 @@ static void curses_handle_input(int ch) {
 		console_scroll(-1);
 	} else if (ch == KEY_DOWN) {
 		console_scroll(1);
+	} else if (ch == '.') {
+		console(".");
 	}
 }
 
