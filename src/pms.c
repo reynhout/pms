@@ -1,7 +1,7 @@
 /* vi:set ts=4 sts=4 sw=4 noet:
  *
  * Practical Music Search
- * Copyright (c) 2006-2013 Kim Tore Jensen
+ * Copyright (c) 2006-2014 Kim Tore Jensen
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
