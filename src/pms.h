@@ -38,6 +38,9 @@
 #define PMS_EXIT_THREAD 3
 #define PMS_EXIT_KILLED 4
 
+#define PMS_HAS_INPUT_STDIN 1
+#define PMS_HAS_INPUT_MPD 2
+
 struct options_t {
     char * server;
     unsigned int port;

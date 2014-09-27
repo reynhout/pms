@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <sys/select.h>
+#include <unistd.h>
 #include "pms.h"
 
 struct options_t * options = NULL;
@@ -43,7 +45,7 @@ void reset_options() {
 	options->server = "localhost";
 	options->port = 0;
 	options->timeout = 200;
-	options->console_size = 1000;
+	options->console_size = 1024;
 
 }
 
@@ -133,41 +135,6 @@ static void pms_handle_mpd_idle_update(struct mpd_connection * connection, enum 
 
 }
 
-static void * pms_thread_mpd(void * threadid) {
-
-	struct mpd_connection * connection = NULL;
-	bool is_idle = false;
-	enum mpd_idle flags = -1;
-
-	connection = pms_mpd_connect();
-
-	while(pms_state->running) {
-		if (connection) {
-			if (pms_state->status != NULL && flags == 0) {
-				mpd_send_idle(connection);
-				flags = mpd_recv_idle(connection, true);
-			} else {
-				pms_handle_mpd_idle_update(connection, flags);
-				topbar_draw();
-				flags = 0;
-			}
-		} else {
-			console("No connection, sleeping...");
-			sleep(1);
-		}
-	}
-
-	pthread_exit(NULL);
-
-}
-
-static void pms_start_threads() {
-	pthread_t thread_mpd;
-	if (pthread_create(&thread_mpd, NULL, pms_thread_mpd, NULL)) {
-		fatal(PMS_EXIT_THREAD, "Cannot create MPD thread\n");
-	}
-}
-
 void signal_resize(int signal) {
 	console("Resized to %d x %d", LINES, COLS);
 	pms_curses_lock();
@@ -187,7 +154,45 @@ static void signal_init() {
 	signal(SIGTERM, signal_kill);
 }
 
+int get_input(struct mpd_connection * connection) {
+	struct timeval tv;
+	int mpd_fd;
+	int retval;
+	int flags = 0;
+	fd_set fds;
+
+	tv.tv_sec = 1;
+	tv.tv_usec = 0;
+	mpd_fd = mpd_connection_get_fd(connection);
+
+	FD_ZERO(&fds);
+	FD_SET(STDIN_FILENO, &fds);
+	FD_SET(mpd_fd, &fds);
+
+	retval = select(mpd_fd+1, &fds, NULL, NULL, &tv);
+
+	if (retval == -1) {
+		// FIXME
+	} else if (retval > 0) {
+		if (FD_ISSET(mpd_fd, &fds)) {
+			console("Got something from MPD");
+			flags |= PMS_HAS_INPUT_MPD;
+		}
+		if (FD_ISSET(STDIN_FILENO, &fds)) {
+			console("Console key input");
+			flags |= PMS_HAS_INPUT_STDIN;
+		}
+	}
+
+	return flags;
+}
+
 int main(int argc, char** argv) {
+
+	struct mpd_connection * connection = NULL;
+	bool is_idle = false;
+	enum mpd_idle flags = -1;
+	int input_flags = 0;
 
 	reset_options();
 	pms_state = malloc(sizeof(struct pms_state_t));
@@ -198,10 +203,31 @@ int main(int argc, char** argv) {
 	console_init(options->console_size);
 	signal_init();
 	console("%s %s (c) 2006-2014 Kim Tore Jensen <%s>", PACKAGE_NAME, PACKAGE_VERSION, PACKAGE_BUGREPORT);
-	pms_start_threads();
 
 	while(pms_state->running) {
-		curses_get_input();
+
+		if (!connection) {
+			connection = pms_mpd_connect();
+		}
+
+		if (connection && !is_idle) {
+			mpd_send_idle(connection);
+			is_idle = true;
+		}
+
+		input_flags = get_input(connection);
+
+		if (input_flags & PMS_HAS_INPUT_MPD) {
+			flags = mpd_recv_idle(connection, true);
+			is_idle = false;
+			pms_handle_mpd_idle_update(connection, flags);
+			topbar_draw();
+		}
+
+		if (input_flags & PMS_HAS_INPUT_STDIN) {
+			curses_get_input();
+		}
+
 	}
 
 	curses_shutdown();
