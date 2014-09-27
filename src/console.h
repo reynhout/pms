@@ -28,14 +28,14 @@ typedef struct {
 } logline_t;
 
 /**
+ * Resize the console window.
+ */
+void console_resize();
+
+/**
  * Initialize the console.
  */
 void console_init(unsigned int max_lines);
-
-/**
- * Get string at array position n
- */
-logline_t * console_get_line(unsigned int n);
 
 /**
  * Print formatted string to console.
@@ -53,6 +53,11 @@ void console_draw_lines(long start, long end);
  * @see window_scroll@window.h
  */
 int console_scroll(long delta);
+
+/**
+ * Allocate memory for a log line.
+ */
+logline_t * new_logline();
 
 /**
  * Free memory for a log line.
