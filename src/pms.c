@@ -129,7 +129,9 @@ static void pms_handle_mpd_idle_update(struct mpd_connection * connection, enum 
 		console("Database update has started or finished.");
 	}
 
-	pms_get_mpd_state(connection);
+	if (flags & (MPD_IDLE_QUEUE | MPD_IDLE_PLAYER | MPD_IDLE_MIXER | MPD_IDLE_OPTIONS)) {
+		pms_get_mpd_state(connection);
+	}
 
 	topbar_draw();
 
@@ -175,11 +177,9 @@ int get_input(struct mpd_connection * connection) {
 		// FIXME
 	} else if (retval > 0) {
 		if (FD_ISSET(mpd_fd, &fds)) {
-			console("Got something from MPD");
 			flags |= PMS_HAS_INPUT_MPD;
 		}
 		if (FD_ISSET(STDIN_FILENO, &fds)) {
-			console("Console key input");
 			flags |= PMS_HAS_INPUT_STDIN;
 		}
 	}
@@ -207,7 +207,9 @@ int main(int argc, char** argv) {
 	while(pms_state->running) {
 
 		if (!connection) {
-			connection = pms_mpd_connect();
+			if (connection = pms_mpd_connect()) {
+				pms_handle_mpd_idle_update(connection, -1);
+			}
 		}
 
 		if (connection && !is_idle) {
@@ -221,7 +223,6 @@ int main(int argc, char** argv) {
 			flags = mpd_recv_idle(connection, true);
 			is_idle = false;
 			pms_handle_mpd_idle_update(connection, flags);
-			topbar_draw();
 		}
 
 		if (input_flags & PMS_HAS_INPUT_STDIN) {
