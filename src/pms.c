@@ -24,6 +24,7 @@
 #include <signal.h>
 #include <sys/select.h>
 #include <unistd.h>
+#include <errno.h>
 #include "pms.h"
 
 struct options_t * options = NULL;
@@ -44,7 +45,7 @@ void reset_options() {
 
 	options->server = "localhost";
 	options->port = 0;
-	options->timeout = 200;
+	options->timeout = 2000;
 	options->console_size = 1024;
 
 }
@@ -156,16 +157,19 @@ static void signal_init() {
 	signal(SIGTERM, signal_kill);
 }
 
-int get_input(struct mpd_connection * connection) {
+int pms_get_pending_input_flags(struct mpd_connection * connection) {
 	struct timeval tv;
-	int mpd_fd;
+	int mpd_fd = 0;
 	int retval;
 	int flags = 0;
 	fd_set fds;
 
 	tv.tv_sec = 1;
 	tv.tv_usec = 0;
-	mpd_fd = mpd_connection_get_fd(connection);
+
+	if (connection) {
+		mpd_fd = mpd_connection_get_fd(connection);
+	}
 
 	FD_ZERO(&fds);
 	FD_SET(STDIN_FILENO, &fds);
@@ -174,9 +178,10 @@ int get_input(struct mpd_connection * connection) {
 	retval = select(mpd_fd+1, &fds, NULL, NULL, &tv);
 
 	if (retval == -1) {
-		// FIXME
+		console("Error %d in select(): %s", errno, strerror(errno));
+
 	} else if (retval > 0) {
-		if (FD_ISSET(mpd_fd, &fds)) {
+		if (mpd_fd != 0 && FD_ISSET(mpd_fd, &fds)) {
 			flags |= PMS_HAS_INPUT_MPD;
 		}
 		if (FD_ISSET(STDIN_FILENO, &fds)) {
@@ -189,6 +194,7 @@ int get_input(struct mpd_connection * connection) {
 
 int main(int argc, char** argv) {
 
+	command_t * command = NULL;
 	struct mpd_connection * connection = NULL;
 	bool is_idle = false;
 	enum mpd_idle flags = -1;
@@ -202,6 +208,7 @@ int main(int argc, char** argv) {
 	curses_init();
 	console_init(options->console_size);
 	signal_init();
+	input_reset();
 	console("%s %s (c) 2006-2014 Kim Tore Jensen <%s>", PACKAGE_NAME, PACKAGE_VERSION, PACKAGE_BUGREPORT);
 
 	while(pms_state->running) {
@@ -217,7 +224,7 @@ int main(int argc, char** argv) {
 			is_idle = true;
 		}
 
-		input_flags = get_input(connection);
+		input_flags = pms_get_pending_input_flags(connection);
 
 		if (input_flags & PMS_HAS_INPUT_MPD) {
 			flags = mpd_recv_idle(connection, true);
@@ -226,7 +233,12 @@ int main(int argc, char** argv) {
 		}
 
 		if (input_flags & PMS_HAS_INPUT_STDIN) {
-			curses_get_input();
+			if ((command = input_get()) != NULL) {
+				while(command->multiplier > 0 && input_handle(command)) {
+					--command->multiplier;
+				}
+				input_reset();
+			}
 		}
 
 	}

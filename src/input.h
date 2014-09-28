@@ -17,28 +17,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "build.h"
+#define INPUT_MOVEMENT_NA   -1
+#define INPUT_MOVEMENT_NONE 0
+#define INPUT_MOVEMENT_UP   1
+#define INPUT_MOVEMENT_DOWN 2
 
-#if defined HAVE_NCURSESW_CURSES_H
-	#include <ncursesw/curses.h>
-#elif defined HAVE_NCURSESW_H
-	#include <ncursesw.h>
-#elif defined HAVE_NCURSES_CURSES_H
-	#include <ncurses/curses.h>
-#elif defined HAVE_NCURSES_H
-	#include <ncurses.h>
-#elif defined HAVE_CURSES_H
-	#include <curses.h>
-#else
-	#error "SysV or X/Open-compatible Curses header file required"
-#endif
+#define INPUT_ACTION_NONE 0
+#define INPUT_ACTION_QUIT 1
+#define INPUT_ACTION_GO 2
 
-void curses_init();
-void curses_shutdown();
-void curses_init_windows();
-void curses_destroy_windows();
+typedef struct {
+    int multiplier;
+    int movement;
+    int action;
 
-int curses_get_input();
+} command_t;
 
-void pms_curses_lock();
-void pms_curses_unlock();
+/*
+ * Reset input command state to default values.
+ */
+void input_reset();
+
+/*
+ * Retrieve input
+ */
+command_t * input_get();
+
+/*
+ * Perform an action based on a struct command_t.
+ */
+int input_handle(command_t * command);

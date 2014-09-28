@@ -31,6 +31,7 @@
 #include "window.h"
 #include "console.h"
 #include "topbar.h"
+#include "input.h"
 
 #define PMS_EXIT_SUCCESS 0
 #define PMS_EXIT_MEMORY 1

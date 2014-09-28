@@ -79,24 +79,8 @@ void curses_shutdown() {
 	endwin();
 }
 
-static void curses_handle_input(int ch) {
-	if (ch == 'q') {
-		shutdown();
-	} else if (ch == KEY_UP) {
-		console_scroll(-1);
-	} else if (ch == KEY_DOWN) {
-		console_scroll(1);
-	} else if (ch == '.') {
-		console(".");
-	}
-}
-
-void curses_get_input() {
-	int ch;
-	ch = wgetch(window_statusbar);
-	if (ch != ERR) {
-		curses_handle_input(ch);
-	}
+int curses_get_input() {
+	return wgetch(window_statusbar);
 }
 
 void pms_curses_lock() {
