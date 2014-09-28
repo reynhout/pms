@@ -58,19 +58,16 @@ static int input_command_append_multiplier(int multiplier) {
     multiplier = (command.multiplier*10)+multiplier;
     if (multiplier > command.multiplier) {
         command.multiplier = multiplier;
-        console("InputMultiplier set to %d", command.multiplier);
     }
     return command.multiplier;
 }
 
 static void input_command_append_movement(int movement) {
     command.movement = movement;
-    console("InputMovement set to %d", command.movement);
 }
 
 static void input_command_append_action(int action) {
     command.action = action;
-    console("InputAction set to %d", command.action);
     if (command.action != INPUT_ACTION_GO) {
         input_command_append_movement(INPUT_MOVEMENT_NA);
     }
@@ -98,8 +95,9 @@ command_t * input_get() {
     }
     if ((i = input_char_get_action(ch)) != INPUT_ACTION_NONE) {
         if (command.action != INPUT_ACTION_NONE && command.action != i) {
-            console("Invalid input sequence, resetting.");
+            debug("Invalid input sequence with double actions (%d, %d), resetting.\n", command.action, i);
             input_reset();
+            return NULL;
         }
         if (command.action == INPUT_ACTION_NONE) {
             input_command_append_action(i);
@@ -117,7 +115,7 @@ command_t * input_get() {
 }
 
 int input_handle(command_t * command) {
-    console("input_handle(): multiplier=%d, movement=%d, action=%d", command->multiplier, command->movement, command->action);
+    debug("input_handle(): multiplier=%d, movement=%d, action=%d\n", command->multiplier, command->movement, command->action);
     if (command->action == INPUT_ACTION_QUIT) {
         shutdown();
         return 0;

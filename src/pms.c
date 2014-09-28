@@ -32,6 +32,17 @@ struct pms_state_t * pms_state = NULL;
 
 static pthread_mutex_t status_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+void debug(const char * format, ...) {
+
+    va_list ap;
+
+    if (options->debug) {
+        va_start(ap, format);
+        vfprintf(stderr, format, ap);
+        va_end(ap);
+    }
+}
+
 void reset_options() {
 
     if (options == NULL) {
@@ -47,6 +58,7 @@ void reset_options() {
     options->port = 0;
     options->timeout = 2000;
     options->console_size = 1024;
+    options->debug = true;
 
 }
 

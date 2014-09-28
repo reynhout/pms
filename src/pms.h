@@ -47,6 +47,7 @@ struct options_t {
     unsigned int port;
     unsigned int timeout;
     unsigned int console_size;
+    bool debug;
 
 };
 
@@ -65,6 +66,11 @@ void fatal(int exitcode, const char * format, ...);
  * Exit program.
  */
 void shutdown();
+
+/**
+ * Print a debug message to stderr
+ */
+void debug(const char * format, ...);
 
 /**
  * Lock MPD status object
