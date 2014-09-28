@@ -17,10 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define INPUT_MOVEMENT_NA   -1
+#define INPUT_MOVEMENT_NA -1
 #define INPUT_MOVEMENT_NONE 0
-#define INPUT_MOVEMENT_UP   1
+#define INPUT_MOVEMENT_UP 1
 #define INPUT_MOVEMENT_DOWN 2
+#define INPUT_MOVEMENT_END 3
 
 #define INPUT_ACTION_NONE 0
 #define INPUT_ACTION_QUIT 1

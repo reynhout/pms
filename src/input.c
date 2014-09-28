@@ -35,6 +35,8 @@ static int input_char_get_movement(int ch) {
         return INPUT_MOVEMENT_UP;
 	} else if (ch == KEY_DOWN || ch == 'j') {
         return INPUT_MOVEMENT_DOWN;
+	} else if (ch == 'G') {
+        return INPUT_MOVEMENT_END;
     }
     return INPUT_MOVEMENT_NONE;
 }
@@ -46,7 +48,7 @@ static int input_char_get_action(int ch) {
         return INPUT_ACTION_GO;
     } else if (ch == 'q') {
         return INPUT_ACTION_QUIT;
-    } else if (ch == 'g') {
+    } else if (ch == 'g' || ch == 'G') {
         return INPUT_ACTION_GO;
     }
     return INPUT_ACTION_NONE;
@@ -95,7 +97,15 @@ command_t * input_get() {
         input_command_append_movement(i);
     }
     if ((i = input_char_get_action(ch)) != INPUT_ACTION_NONE) {
-        input_command_append_action(i);
+        if (command.action != INPUT_ACTION_NONE && command.action != i) {
+            console("Invalid input sequence, resetting.");
+            input_reset();
+        }
+        if (command.action == INPUT_ACTION_NONE) {
+            input_command_append_action(i);
+        } else if (command.movement == INPUT_MOVEMENT_NONE) {
+            input_command_append_movement(INPUT_MOVEMENT_NA);
+        }
     }
     if (input_ready()) {
         if (command.multiplier == 0) {
@@ -116,6 +126,12 @@ int input_handle(command_t * command) {
             console_scroll(-command->multiplier);
         } else if (command->movement == INPUT_MOVEMENT_DOWN) {
             console_scroll(command->multiplier);
+        } else if (command->movement == INPUT_MOVEMENT_END) {
+            console_scroll_to(-1);
+            return 0;
+        } else if (command->movement == INPUT_MOVEMENT_NA) {
+            console_scroll_to(command->multiplier-1); // convert 1-indexed to 0-indexed
+            return 0;
         }
 	} else {
         return 0;

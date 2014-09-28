@@ -135,6 +135,14 @@ int console_scroll(long delta) {
 	return changed;
 }
 
+int console_scroll_to(long position) {
+	if (position < 0) {
+		position = console_window->num_lines+position;
+	}
+	position -= console_window->position;
+	console_scroll(position);
+}
+
 logline_t * new_logline() {
 	logline_t * line;
 

@@ -55,6 +55,13 @@ void console_draw_lines(long start, long end);
 int console_scroll(long delta);
 
 /**
+ * Scroll console to an absolute position.
+ *
+ * @see window_scroll@window.h
+ */
+int console_scroll_to(long position);
+
+/**
  * Allocate memory for a log line.
  */
 logline_t * new_logline();
