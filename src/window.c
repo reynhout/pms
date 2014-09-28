@@ -38,7 +38,7 @@ int window_scroll(window_t * window, long delta) {
 			// TODO: beep?
 		}
 	} else if (delta < 0) {
-		npos = window->position - delta - 2;
+		npos = window->position + delta - 1;
 		if (npos < 0) {
 			delta = -window->position;
 			// TODO: beep?
