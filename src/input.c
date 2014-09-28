@@ -1,4 +1,4 @@
-/* vi:set ts=4 sts=4 sw=4 noet:
+/* vi:set ts=4 sts=4 sw=4 et:
  *
  * Practical Music Search
  * Copyright (c) 2006-2014 Kim Tore Jensen
@@ -31,20 +31,20 @@ static int input_char_get_int(int ch) {
 }
 
 static int input_char_get_movement(int ch) {
-	if (ch == KEY_UP || ch == 'k') {
+    if (ch == KEY_UP || ch == 'k') {
         return INPUT_MOVEMENT_UP;
-	} else if (ch == KEY_DOWN || ch == 'j') {
+    } else if (ch == KEY_DOWN || ch == 'j') {
         return INPUT_MOVEMENT_DOWN;
-	} else if (ch == 'G') {
+    } else if (ch == 'G') {
         return INPUT_MOVEMENT_END;
     }
     return INPUT_MOVEMENT_NONE;
 }
 
 static int input_char_get_action(int ch) {
-	if (ch == KEY_UP || ch == 'k') {
+    if (ch == KEY_UP || ch == 'k') {
         return INPUT_ACTION_GO;
-	} else if (ch == KEY_DOWN || ch == 'j') {
+    } else if (ch == KEY_DOWN || ch == 'j') {
         return INPUT_ACTION_GO;
     } else if (ch == 'q') {
         return INPUT_ACTION_QUIT;
@@ -119,9 +119,9 @@ command_t * input_get() {
 int input_handle(command_t * command) {
     console("input_handle(): multiplier=%d, movement=%d, action=%d", command->multiplier, command->movement, command->action);
     if (command->action == INPUT_ACTION_QUIT) {
-		shutdown();
+        shutdown();
         return 0;
-	} else if (command->action == INPUT_ACTION_GO) {
+    } else if (command->action == INPUT_ACTION_GO) {
         if (command->movement == INPUT_MOVEMENT_UP) {
             console_scroll(-command->multiplier);
         } else if (command->movement == INPUT_MOVEMENT_DOWN) {
@@ -133,7 +133,7 @@ int input_handle(command_t * command) {
             console_scroll_to(command->multiplier-1); // convert 1-indexed to 0-indexed
             return 0;
         }
-	} else {
+    } else {
         return 0;
     }
     return 1;

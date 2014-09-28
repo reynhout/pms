@@ -1,4 +1,4 @@
-/* vi:set ts=4 sts=4 sw=4 noet:
+/* vi:set ts=4 sts=4 sw=4 et:
  *
  * Practical Music Search
  * Copyright (c) 2006-2014 Kim Tore Jensen
@@ -22,14 +22,14 @@
  */
 typedef struct {
 
-	/* Scroll position - top item */
-	long position;
+    /* Scroll position - top item */
+    long position;
 
-	/* Cursor position */
-	long cursor;
+    /* Cursor position */
+    long cursor;
 
-	/* Height in lines */
-	int height;
+    /* Height in lines */
+    int height;
 
     /* Number of lines in list */
     int num_lines;

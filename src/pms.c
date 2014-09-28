@@ -1,4 +1,4 @@
-/* vi:set ts=4 sts=4 sw=4 noet:
+/* vi:set ts=4 sts=4 sw=4 et:
  *
  * Practical Music Search
  * Copyright (c) 2006-2014 Kim Tore Jensen
@@ -34,224 +34,224 @@ static pthread_mutex_t status_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void reset_options() {
 
-	if (options == NULL) {
-		options = malloc(sizeof(struct options_t));
-	}
+    if (options == NULL) {
+        options = malloc(sizeof(struct options_t));
+    }
 
-	if (options == NULL) {
-		perror("out of memory\n");
-		exit(PMS_EXIT_MEMORY);
-	}
+    if (options == NULL) {
+        perror("out of memory\n");
+        exit(PMS_EXIT_MEMORY);
+    }
 
-	options->server = "localhost";
-	options->port = 0;
-	options->timeout = 2000;
-	options->console_size = 1024;
+    options->server = "localhost";
+    options->port = 0;
+    options->timeout = 2000;
+    options->console_size = 1024;
 
 }
 
 void fatal(int exitcode, const char * format, ...) {
-	va_list ap;
-	curses_shutdown();
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
-	exit(exitcode);
+    va_list ap;
+    curses_shutdown();
+    va_start(ap, format);
+    vprintf(format, ap);
+    va_end(ap);
+    exit(exitcode);
 }
 
 void shutdown() {
-	console("Shutting down.");
-	pms_state->running = 0;
+    console("Shutting down.");
+    pms_state->running = 0;
 }
 
 static struct mpd_connection * pms_mpd_connect() {
 
-	enum mpd_error status;
-	const char * error_msg;
-	struct mpd_connection * connection;
+    enum mpd_error status;
+    const char * error_msg;
+    struct mpd_connection * connection;
 
-	console("Connecting to %s...", options->server);
+    console("Connecting to %s...", options->server);
 
-	connection = mpd_connection_new(options->server, options->port, options->timeout);
-	if (connection == NULL) {
-		fatal(PMS_EXIT_MEMORY, "mpd connect: out of memory\n");
-	}
+    connection = mpd_connection_new(options->server, options->port, options->timeout);
+    if (connection == NULL) {
+        fatal(PMS_EXIT_MEMORY, "mpd connect: out of memory\n");
+    }
 
-	status = mpd_connection_get_error(connection);
-	if (status == MPD_ERROR_SUCCESS) {
-		console("Connected to %s", options->server);
-	} else {
-		error_msg = mpd_connection_get_error_message(connection);
-		console("Error connecting to %s: error %d: %s", options->server, status, error_msg);
-		mpd_connection_free(connection);
-		connection = NULL;
-	}
-	
-	return connection;
+    status = mpd_connection_get_error(connection);
+    if (status == MPD_ERROR_SUCCESS) {
+        console("Connected to %s", options->server);
+    } else {
+        error_msg = mpd_connection_get_error_message(connection);
+        console("Error connecting to %s: error %d: %s", options->server, status, error_msg);
+        mpd_connection_free(connection);
+        connection = NULL;
+    }
+    
+    return connection;
 }
 
 static void pms_get_mpd_state(struct mpd_connection * connection) {
 
-	pms_status_lock();
-	if (pms_state->status) {
-		mpd_status_free(pms_state->status);
-	}
-	pms_state->status = mpd_run_status(connection);
-	pms_status_unlock();
+    pms_status_lock();
+    if (pms_state->status) {
+        mpd_status_free(pms_state->status);
+    }
+    pms_state->status = mpd_run_status(connection);
+    pms_status_unlock();
 
 }
 
 static void pms_handle_mpd_idle_update(struct mpd_connection * connection, enum mpd_idle flags) {
 
-	console("pms_handle_mpd_idle_update %d", flags);
+    console("pms_handle_mpd_idle_update %d", flags);
 
-	if (flags & MPD_IDLE_DATABASE) {
-		console("Database has been updated.");
-	}
-	if (flags & MPD_IDLE_STORED_PLAYLIST) {
-		console("Stored playlists have been updated.");
-	}
-	if (flags & MPD_IDLE_QUEUE) {
-		console("The queue has been updated.");
-	}
-	if (flags & MPD_IDLE_PLAYER) {
-		console("Player state has changed.");
-	}
-	if (flags & MPD_IDLE_MIXER) {
-		console("Mixer parameters have changed.");
-	}
-	if (flags & MPD_IDLE_OUTPUT) {
-		console("Outputs have changed.");
-	}
-	if (flags & MPD_IDLE_OPTIONS) {
-		console("Options have changed.");
-	}
-	if (flags & MPD_IDLE_UPDATE) {
-		console("Database update has started or finished.");
-	}
+    if (flags & MPD_IDLE_DATABASE) {
+        console("Database has been updated.");
+    }
+    if (flags & MPD_IDLE_STORED_PLAYLIST) {
+        console("Stored playlists have been updated.");
+    }
+    if (flags & MPD_IDLE_QUEUE) {
+        console("The queue has been updated.");
+    }
+    if (flags & MPD_IDLE_PLAYER) {
+        console("Player state has changed.");
+    }
+    if (flags & MPD_IDLE_MIXER) {
+        console("Mixer parameters have changed.");
+    }
+    if (flags & MPD_IDLE_OUTPUT) {
+        console("Outputs have changed.");
+    }
+    if (flags & MPD_IDLE_OPTIONS) {
+        console("Options have changed.");
+    }
+    if (flags & MPD_IDLE_UPDATE) {
+        console("Database update has started or finished.");
+    }
 
-	if (flags & (MPD_IDLE_QUEUE | MPD_IDLE_PLAYER | MPD_IDLE_MIXER | MPD_IDLE_OPTIONS)) {
-		pms_get_mpd_state(connection);
-	}
+    if (flags & (MPD_IDLE_QUEUE | MPD_IDLE_PLAYER | MPD_IDLE_MIXER | MPD_IDLE_OPTIONS)) {
+        pms_get_mpd_state(connection);
+    }
 
-	topbar_draw();
+    topbar_draw();
 
 }
 
 void signal_resize(int signal) {
-	console("Resized to %d x %d", LINES, COLS);
-	pms_curses_lock();
-	curses_destroy_windows();
-	curses_init_windows();
-	pms_curses_unlock();
+    console("Resized to %d x %d", LINES, COLS);
+    pms_curses_lock();
+    curses_destroy_windows();
+    curses_init_windows();
+    pms_curses_unlock();
 }
 
 void signal_kill(int signal) {
-	fatal(PMS_EXIT_KILLED, "Killed by signal %d\n", signal);
+    fatal(PMS_EXIT_KILLED, "Killed by signal %d\n", signal);
 }
 
 static void signal_init() {
-	if (signal(SIGWINCH, signal_resize) == SIG_ERR) {
-		console("Error in signal_init(): window resizing will not work!");
-	}
-	signal(SIGTERM, signal_kill);
+    if (signal(SIGWINCH, signal_resize) == SIG_ERR) {
+        console("Error in signal_init(): window resizing will not work!");
+    }
+    signal(SIGTERM, signal_kill);
 }
 
 int pms_get_pending_input_flags(struct mpd_connection * connection) {
-	struct timeval tv;
-	int mpd_fd = 0;
-	int retval;
-	int flags = 0;
-	fd_set fds;
+    struct timeval tv;
+    int mpd_fd = 0;
+    int retval;
+    int flags = 0;
+    fd_set fds;
 
-	tv.tv_sec = 1;
-	tv.tv_usec = 0;
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;
 
-	if (connection) {
-		mpd_fd = mpd_connection_get_fd(connection);
-	}
+    if (connection) {
+        mpd_fd = mpd_connection_get_fd(connection);
+    }
 
-	FD_ZERO(&fds);
-	FD_SET(STDIN_FILENO, &fds);
-	FD_SET(mpd_fd, &fds);
+    FD_ZERO(&fds);
+    FD_SET(STDIN_FILENO, &fds);
+    FD_SET(mpd_fd, &fds);
 
-	retval = select(mpd_fd+1, &fds, NULL, NULL, &tv);
+    retval = select(mpd_fd+1, &fds, NULL, NULL, &tv);
 
-	if (retval == -1) {
-		console("Error %d in select(): %s", errno, strerror(errno));
+    if (retval == -1) {
+        console("Error %d in select(): %s", errno, strerror(errno));
 
-	} else if (retval > 0) {
-		if (mpd_fd != 0 && FD_ISSET(mpd_fd, &fds)) {
-			flags |= PMS_HAS_INPUT_MPD;
-		}
-		if (FD_ISSET(STDIN_FILENO, &fds)) {
-			flags |= PMS_HAS_INPUT_STDIN;
-		}
-	}
+    } else if (retval > 0) {
+        if (mpd_fd != 0 && FD_ISSET(mpd_fd, &fds)) {
+            flags |= PMS_HAS_INPUT_MPD;
+        }
+        if (FD_ISSET(STDIN_FILENO, &fds)) {
+            flags |= PMS_HAS_INPUT_STDIN;
+        }
+    }
 
-	return flags;
+    return flags;
 }
 
 int main(int argc, char** argv) {
 
-	command_t * command = NULL;
-	struct mpd_connection * connection = NULL;
-	bool is_idle = false;
-	enum mpd_idle flags = -1;
-	int input_flags = 0;
+    command_t * command = NULL;
+    struct mpd_connection * connection = NULL;
+    bool is_idle = false;
+    enum mpd_idle flags = -1;
+    int input_flags = 0;
 
-	reset_options();
-	pms_state = malloc(sizeof(struct pms_state_t));
-	memset(pms_state, 0, sizeof(struct pms_state_t));
-	pms_state->running = true;
+    reset_options();
+    pms_state = malloc(sizeof(struct pms_state_t));
+    memset(pms_state, 0, sizeof(struct pms_state_t));
+    pms_state->running = true;
 
-	curses_init();
-	console_init(options->console_size);
-	signal_init();
-	input_reset();
-	console("%s %s (c) 2006-2014 Kim Tore Jensen <%s>", PACKAGE_NAME, PACKAGE_VERSION, PACKAGE_BUGREPORT);
+    curses_init();
+    console_init(options->console_size);
+    signal_init();
+    input_reset();
+    console("%s %s (c) 2006-2014 Kim Tore Jensen <%s>", PACKAGE_NAME, PACKAGE_VERSION, PACKAGE_BUGREPORT);
 
-	while(pms_state->running) {
+    while(pms_state->running) {
 
-		if (!connection) {
-			if (connection = pms_mpd_connect()) {
-				pms_handle_mpd_idle_update(connection, -1);
-			}
-		}
+        if (!connection) {
+            if (connection = pms_mpd_connect()) {
+                pms_handle_mpd_idle_update(connection, -1);
+            }
+        }
 
-		if (connection && !is_idle) {
-			mpd_send_idle(connection);
-			is_idle = true;
-		}
+        if (connection && !is_idle) {
+            mpd_send_idle(connection);
+            is_idle = true;
+        }
 
-		input_flags = pms_get_pending_input_flags(connection);
+        input_flags = pms_get_pending_input_flags(connection);
 
-		if (input_flags & PMS_HAS_INPUT_MPD) {
-			flags = mpd_recv_idle(connection, true);
-			is_idle = false;
-			pms_handle_mpd_idle_update(connection, flags);
-		}
+        if (input_flags & PMS_HAS_INPUT_MPD) {
+            flags = mpd_recv_idle(connection, true);
+            is_idle = false;
+            pms_handle_mpd_idle_update(connection, flags);
+        }
 
-		if (input_flags & PMS_HAS_INPUT_STDIN) {
-			if ((command = input_get()) != NULL) {
-				while(command->multiplier > 0 && input_handle(command)) {
-					--command->multiplier;
-				}
-				input_reset();
-			}
-		}
+        if (input_flags & PMS_HAS_INPUT_STDIN) {
+            if ((command = input_get()) != NULL) {
+                while(command->multiplier > 0 && input_handle(command)) {
+                    --command->multiplier;
+                }
+                input_reset();
+            }
+        }
 
-	}
+    }
 
-	curses_shutdown();
+    curses_shutdown();
 
-	return PMS_EXIT_SUCCESS;
+    return PMS_EXIT_SUCCESS;
 }
 
 void pms_status_lock() {
-	pthread_mutex_lock(&status_mutex);
+    pthread_mutex_lock(&status_mutex);
 }
 
 void pms_status_unlock() {
-	pthread_mutex_unlock(&status_mutex);
+    pthread_mutex_unlock(&status_mutex);
 }

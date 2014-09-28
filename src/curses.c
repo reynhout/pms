@@ -1,4 +1,4 @@
-/* vi:set ts=4 sts=4 sw=4 noet:
+/* vi:set ts=4 sts=4 sw=4 et:
  *
  * Practical Music Search
  * Copyright (c) 2006-2014 Kim Tore Jensen
@@ -27,66 +27,66 @@ WINDOW * window_statusbar;
 static pthread_mutex_t curses_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void curses_destroy_windows() {
-	if (window_topbar) {
-		delwin(window_topbar);
-	}
-	if (window_main) {
-		delwin(window_main);
-	}
-	if (window_statusbar) {
-		delwin(window_statusbar);
-	}
+    if (window_topbar) {
+        delwin(window_topbar);
+    }
+    if (window_main) {
+        delwin(window_main);
+    }
+    if (window_statusbar) {
+        delwin(window_statusbar);
+    }
 }
 
 void curses_init_windows() {
-	window_topbar = newwin(1, COLS, 0, 0);
-	window_main = newwin(LINES - 2, COLS, 1, 0);
-	window_statusbar = newwin(1, COLS, LINES - 1, 0);
-	scrollok(window_main, true);
-	scrollok(window_topbar, false);
-	scrollok(window_statusbar, false);
-	keypad(window_statusbar, true);
+    window_topbar = newwin(1, COLS, 0, 0);
+    window_main = newwin(LINES - 2, COLS, 1, 0);
+    window_statusbar = newwin(1, COLS, LINES - 1, 0);
+    scrollok(window_main, true);
+    scrollok(window_topbar, false);
+    scrollok(window_statusbar, false);
+    keypad(window_statusbar, true);
 }
 
 void curses_init() {
-	if ((initscr()) == NULL) {
-		fatal(PMS_EXIT_NCURSES, "Unable to start ncurses, exiting.\n");
-	}
+    if ((initscr()) == NULL) {
+        fatal(PMS_EXIT_NCURSES, "Unable to start ncurses, exiting.\n");
+    }
 
-	curses_init_windows();
+    curses_init_windows();
 
-	noecho();
-	raw();
-	curs_set(0);
-	halfdelay(10);
+    noecho();
+    raw();
+    curs_set(0);
+    halfdelay(10);
 
 #ifdef HAVE_CURSES_COLOR
-	if (has_colors()) {
-		start_color();
-		use_default_colors();
-	}
+    if (has_colors()) {
+        start_color();
+        use_default_colors();
+    }
 #endif
 
-	wclear(window_topbar);
-	wclear(window_main);
-	wclear(window_statusbar);
-	wrefresh(window_topbar);
-	wrefresh(window_main);
-	wrefresh(window_statusbar);
+    wclear(window_topbar);
+    wclear(window_main);
+    wclear(window_statusbar);
+    wrefresh(window_topbar);
+    wrefresh(window_main);
+    wrefresh(window_statusbar);
 }
 
 void curses_shutdown() {
-	endwin();
+    endwin();
 }
 
 int curses_get_input() {
-	return wgetch(window_statusbar);
+    return wgetch(window_statusbar);
 }
 
 void pms_curses_lock() {
-	pthread_mutex_lock(&curses_mutex);
+    pthread_mutex_lock(&curses_mutex);
 }
 
 void pms_curses_unlock() {
-	pthread_mutex_unlock(&curses_mutex);
+    pthread_mutex_unlock(&curses_mutex);
 }

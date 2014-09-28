@@ -1,4 +1,4 @@
-/* vi:set ts=4 sts=4 sw=4 noet:
+/* vi:set ts=4 sts=4 sw=4 et:
  *
  * Practical Music Search
  * Copyright (c) 2006-2014 Kim Tore Jensen
@@ -35,133 +35,133 @@ pthread_mutex_t console_mutex = PTHREAD_MUTEX_INITIALIZER;
 window_t * console_window = NULL;
 
 void console_resize() {
-	console_window->height = LINES - 2;
-	console_window->position = 0;
-	console_window->num_lines = 0;
+    console_window->height = LINES - 2;
+    console_window->position = 0;
+    console_window->num_lines = 0;
 }
 
 void console_init(unsigned int max_lines) {
-	if (lines != NULL) {
-		lines = realloc(lines, max_lines * sizeof(logline_t *));
-	} else {
-		lines = malloc(max_lines * sizeof(logline_t *));
-	}
-	if (lines == NULL) {
-		fatal(PMS_EXIT_MEMORY, "out of memory\n");
-	}
-	if (console_window == NULL) {
-		console_window = malloc(sizeof(window_t));
-		if (console_window == NULL) {
-			fatal(PMS_EXIT_MEMORY, "out of memory\n");
-		}
-		console_resize();
-	}
-	memset(lines+line_limit, 0, (max_lines-line_limit)*sizeof(logline_t *));
-	line_limit = max_lines;
+    if (lines != NULL) {
+        lines = realloc(lines, max_lines * sizeof(logline_t *));
+    } else {
+        lines = malloc(max_lines * sizeof(logline_t *));
+    }
+    if (lines == NULL) {
+        fatal(PMS_EXIT_MEMORY, "out of memory\n");
+    }
+    if (console_window == NULL) {
+        console_window = malloc(sizeof(window_t));
+        if (console_window == NULL) {
+            fatal(PMS_EXIT_MEMORY, "out of memory\n");
+        }
+        console_resize();
+    }
+    memset(lines+line_limit, 0, (max_lines-line_limit)*sizeof(logline_t *));
+    line_limit = max_lines;
 }
 
 void console(const char * format, ...) {
-	logline_t *	line;
-	time_t		t;
-	va_list		ap;
+    logline_t *    line;
+    time_t        t;
+    va_list        ap;
 
-	pthread_mutex_lock(&console_mutex);
+    pthread_mutex_lock(&console_mutex);
 
-	line = new_logline();
+    line = new_logline();
 
-	va_start(ap, format);
-	vsnprintf(line->str, 512, format, ap);
-	va_end(ap);
+    va_start(ap, format);
+    vsnprintf(line->str, 512, format, ap);
+    va_end(ap);
 
-	if (lines[line_cursor] != NULL) {
-		free_logline(lines[line_cursor]);
-	}
+    if (lines[line_cursor] != NULL) {
+        free_logline(lines[line_cursor]);
+    }
 
-	++console_window->num_lines;
+    ++console_window->num_lines;
 
-	t = time(NULL);
-	localtime_r(&t, &line->timestamp);
-	strftime(line->ts, 9, "%H:%M:%S", &line->timestamp);
+    t = time(NULL);
+    localtime_r(&t, &line->timestamp);
+    strftime(line->ts, 9, "%H:%M:%S", &line->timestamp);
 
-	lines[line_cursor] = line;
+    lines[line_cursor] = line;
 
-	if (++line_cursor >= line_limit) {
-		console_init(line_limit*2);
-	}
+    if (++line_cursor >= line_limit) {
+        console_init(line_limit*2);
+    }
 
-	/* Scroll window if at bottom. */
-	if (console_window->num_lines < console_window->height || console_window->position + console_window->height + 1 >= console_window->num_lines) {
-		console_scroll(1);
-	}
+    /* Scroll window if at bottom. */
+    if (console_window->num_lines < console_window->height || console_window->position + console_window->height + 1 >= console_window->num_lines) {
+        console_scroll(1);
+    }
 
-	pthread_mutex_unlock(&console_mutex);
+    pthread_mutex_unlock(&console_mutex);
 }
 
 void console_draw_lines(long start, long end) {
 
-	long s;
-	long ptr;
-	logline_t * line;
+    long s;
+    long ptr;
+    logline_t * line;
 
     pms_curses_lock();
 
-	ptr = console_window->position + start;
-	for (s = start; s <= end; s++) {
-		if (ptr >= console_window->num_lines) {
-			break;
-		}
-		line = lines[ptr];
-		mvwprintw(window_main, s, 0, "%s: %s", line->ts, line->str);
-		++ptr;
-	}
+    ptr = console_window->position + start;
+    for (s = start; s <= end; s++) {
+        if (ptr >= console_window->num_lines) {
+            break;
+        }
+        line = lines[ptr];
+        mvwprintw(window_main, s, 0, "%s: %s", line->ts, line->str);
+        ++ptr;
+    }
 
-	wrefresh(window_main);
+    wrefresh(window_main);
 
     pms_curses_unlock();
 }
 
 int console_scroll(long delta) {
 
-	int changed = window_scroll(console_window, delta);
+    int changed = window_scroll(console_window, delta);
 
-	if (changed > 0) {
-		console_draw_lines(console_window->height - changed, console_window->height);
-	} else if (changed < 0) {
-		console_draw_lines(0, -changed - 1);
-	} else {
-		console_draw_lines(console_window->num_lines - 1, console_window->num_lines - 1);
-	}
+    if (changed > 0) {
+        console_draw_lines(console_window->height - changed, console_window->height);
+    } else if (changed < 0) {
+        console_draw_lines(0, -changed - 1);
+    } else {
+        console_draw_lines(console_window->num_lines - 1, console_window->num_lines - 1);
+    }
 
-	return changed;
+    return changed;
 }
 
 int console_scroll_to(long position) {
-	if (position < 0) {
-		position = console_window->num_lines+position;
-	}
-	position -= console_window->position;
-	console_scroll(position);
+    if (position < 0) {
+        position = console_window->num_lines+position;
+    }
+    position -= console_window->position;
+    console_scroll(position);
 }
 
 logline_t * new_logline() {
-	logline_t * line;
+    logline_t * line;
 
-	if ((line = malloc(sizeof(logline_t))) == NULL) {
-		fatal(PMS_EXIT_MEMORY, "Out of memory");
-	}
+    if ((line = malloc(sizeof(logline_t))) == NULL) {
+        fatal(PMS_EXIT_MEMORY, "Out of memory");
+    }
 
-	line->str = malloc(512);
-	line->ts = malloc(9);
+    line->str = malloc(512);
+    line->ts = malloc(9);
 
-	if (line->str == NULL || line->ts == NULL) {
-		fatal(PMS_EXIT_MEMORY, "Out of memory");
-	}
+    if (line->str == NULL || line->ts == NULL) {
+        fatal(PMS_EXIT_MEMORY, "Out of memory");
+    }
 
-	return line;
+    return line;
 }
 
 void free_logline(logline_t * line) {
-	free(line->str);
-	free(line->ts);
-	free(line);
+    free(line->str);
+    free(line->ts);
+    free(line);
 }

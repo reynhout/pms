@@ -1,4 +1,4 @@
-/* vi:set ts=4 sts=4 sw=4 noet:
+/* vi:set ts=4 sts=4 sw=4 et:
  *
  * Practical Music Search
  * Copyright (c) 2006-2014 Kim Tore Jensen
@@ -20,7 +20,7 @@
 #include "build.h"
 
 #ifndef HAVE_PTHREAD
-	#error "POSIX thread library required."
+    #error "POSIX thread library required."
 #endif
 
 #include <pthread.h>
@@ -53,7 +53,7 @@ struct options_t {
 struct pms_state_t {
     /* Set to false when shutting down. */
     int running;
-	struct mpd_status * status;
+    struct mpd_status * status;
 };
 
 /**

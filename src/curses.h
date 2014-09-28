@@ -1,4 +1,4 @@
-/* vi:set ts=4 sts=4 sw=4 noet:
+/* vi:set ts=4 sts=4 sw=4 et:
  *
  * Practical Music Search
  * Copyright (c) 2006-2014 Kim Tore Jensen
@@ -20,17 +20,17 @@
 #include "build.h"
 
 #if defined HAVE_NCURSESW_CURSES_H
-	#include <ncursesw/curses.h>
+    #include <ncursesw/curses.h>
 #elif defined HAVE_NCURSESW_H
-	#include <ncursesw.h>
+    #include <ncursesw.h>
 #elif defined HAVE_NCURSES_CURSES_H
-	#include <ncurses/curses.h>
+    #include <ncurses/curses.h>
 #elif defined HAVE_NCURSES_H
-	#include <ncurses.h>
+    #include <ncurses.h>
 #elif defined HAVE_CURSES_H
-	#include <curses.h>
+    #include <curses.h>
 #else
-	#error "SysV or X/Open-compatible Curses header file required"
+    #error "SysV or X/Open-compatible Curses header file required"
 #endif
 
 void curses_init();

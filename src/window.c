@@ -1,4 +1,4 @@
-/* vi:set ts=4 sts=4 sw=4 noet:
+/* vi:set ts=4 sts=4 sw=4 et:
  *
  * Practical Music Search
  * Copyright (c) 2006-2014 Kim Tore Jensen
@@ -23,34 +23,34 @@ extern WINDOW * window_main;
 
 int window_scroll(window_t * window, long delta) {
 
-	long npos;
+    long npos;
 
-	if (window->num_lines <= window->height) {
-		return 0;
-	}
+    if (window->num_lines <= window->height) {
+        return 0;
+    }
 
     pms_curses_lock();
 
-	if (delta > 0) {
-		npos = window->position + delta;
-		if (npos + window->height > window->num_lines) {
-			delta = window->num_lines - window->height - window->position;
-			// TODO: beep?
-		}
-	} else if (delta < 0) {
-		npos = window->position + delta - 1;
-		if (npos < 0) {
-			delta = -window->position;
-			// TODO: beep?
-		}
-	}
+    if (delta > 0) {
+        npos = window->position + delta;
+        if (npos + window->height > window->num_lines) {
+            delta = window->num_lines - window->height - window->position;
+            // TODO: beep?
+        }
+    } else if (delta < 0) {
+        npos = window->position + delta - 1;
+        if (npos < 0) {
+            delta = -window->position;
+            // TODO: beep?
+        }
+    }
 
-	window->position += delta;
-	wscrl(window_main, delta);
-	wrefresh(window_main);
+    window->position += delta;
+    wscrl(window_main, delta);
+    wrefresh(window_main);
 
     pms_curses_unlock();
 
-	return delta;
+    return delta;
 
 }

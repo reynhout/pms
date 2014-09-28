@@ -1,4 +1,4 @@
-/* vi:set ts=4 sts=4 sw=4 noet:
+/* vi:set ts=4 sts=4 sw=4 et:
  *
  * Practical Music Search
  * Copyright (c) 2006-2014 Kim Tore Jensen
@@ -21,10 +21,10 @@
  * Console log line data structure.
  */
 typedef struct {
-	char * str;
-	char * ts;
-	int verbosity;
-	struct tm timestamp;
+    char * str;
+    char * ts;
+    int verbosity;
+    struct tm timestamp;
 } logline_t;
 
 /**
