@@ -17,34 +17,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define INPUT_MOVEMENT_NA -1
-#define INPUT_MOVEMENT_NONE 0
-#define INPUT_MOVEMENT_UP 1
-#define INPUT_MOVEMENT_DOWN 2
-#define INPUT_MOVEMENT_END 3
+#include <mpd/client.h>
 
-#define INPUT_ACTION_NONE 0
-#define INPUT_ACTION_QUIT 1
-#define INPUT_ACTION_GO 2
+struct pms_state_t;
 
-typedef struct {
-    int multiplier;
-    int movement;
-    int action;
+struct mpd_connection * pms_mpd_connect(const char * server, unsigned int port, unsigned int timeout);
 
-} command_t;
+void pms_get_mpd_status(struct mpd_connection * connection, struct pms_state_t * state);
 
-/*
- * Reset input command state to default values.
- */
-void input_reset();
-
-/*
- * Retrieve input from stdin. Will block until input is available.
- */
-command_t * input_get();
-
-/*
- * Perform an action based on a struct command_t.
- */
-int input_handle(command_t * command);
+void pms_handle_mpd_idle_update(struct mpd_connection * connection, struct pms_state_t * state, enum mpd_idle flags);

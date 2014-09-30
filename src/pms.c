@@ -25,6 +25,7 @@
 #include <sys/select.h>
 #include <unistd.h>
 #include <errno.h>
+
 #include "pms.h"
 
 struct options_t * options = NULL;
@@ -76,80 +77,6 @@ void shutdown() {
     pms_state->running = 0;
 }
 
-static struct mpd_connection * pms_mpd_connect() {
-
-    enum mpd_error status;
-    const char * error_msg;
-    struct mpd_connection * connection;
-
-    console("Connecting to %s...", options->server);
-
-    connection = mpd_connection_new(options->server, options->port, options->timeout);
-    if (connection == NULL) {
-        fatal(PMS_EXIT_MEMORY, "mpd connect: out of memory\n");
-    }
-
-    status = mpd_connection_get_error(connection);
-    if (status == MPD_ERROR_SUCCESS) {
-        console("Connected to %s", options->server);
-    } else {
-        error_msg = mpd_connection_get_error_message(connection);
-        console("Error connecting to %s: error %d: %s", options->server, status, error_msg);
-        mpd_connection_free(connection);
-        connection = NULL;
-    }
-    
-    return connection;
-}
-
-static void pms_get_mpd_state(struct mpd_connection * connection) {
-
-    pms_status_lock();
-    if (pms_state->status) {
-        mpd_status_free(pms_state->status);
-    }
-    pms_state->status = mpd_run_status(connection);
-    pms_status_unlock();
-
-}
-
-static void pms_handle_mpd_idle_update(struct mpd_connection * connection, enum mpd_idle flags) {
-
-    console("pms_handle_mpd_idle_update %d", flags);
-
-    if (flags & MPD_IDLE_DATABASE) {
-        console("Database has been updated.");
-    }
-    if (flags & MPD_IDLE_STORED_PLAYLIST) {
-        console("Stored playlists have been updated.");
-    }
-    if (flags & MPD_IDLE_QUEUE) {
-        console("The queue has been updated.");
-    }
-    if (flags & MPD_IDLE_PLAYER) {
-        console("Player state has changed.");
-    }
-    if (flags & MPD_IDLE_MIXER) {
-        console("Mixer parameters have changed.");
-    }
-    if (flags & MPD_IDLE_OUTPUT) {
-        console("Outputs have changed.");
-    }
-    if (flags & MPD_IDLE_OPTIONS) {
-        console("Options have changed.");
-    }
-    if (flags & MPD_IDLE_UPDATE) {
-        console("Database update has started or finished.");
-    }
-
-    if (flags & (MPD_IDLE_QUEUE | MPD_IDLE_PLAYER | MPD_IDLE_MIXER | MPD_IDLE_OPTIONS)) {
-        pms_get_mpd_state(connection);
-    }
-
-    topbar_draw();
-
-}
-
 void signal_resize(int signal) {
     console("Resized to %d x %d", LINES, COLS);
     pms_curses_lock();
@@ -170,6 +97,7 @@ static void signal_init() {
 }
 
 int pms_get_pending_input_flags(struct mpd_connection * connection) {
+
     struct timeval tv;
     int mpd_fd = 0;
     int retval;
@@ -226,8 +154,8 @@ int main(int argc, char** argv) {
     while(pms_state->running) {
 
         if (!connection) {
-            if (connection = pms_mpd_connect()) {
-                pms_handle_mpd_idle_update(connection, -1);
+            if (connection = pms_mpd_connect(options->server, options->port, options->timeout)) {
+                pms_handle_mpd_idle_update(connection, pms_state, -1);
             }
         }
 
@@ -241,7 +169,7 @@ int main(int argc, char** argv) {
         if (input_flags & PMS_HAS_INPUT_MPD) {
             flags = mpd_recv_idle(connection, true);
             is_idle = false;
-            pms_handle_mpd_idle_update(connection, flags);
+            pms_handle_mpd_idle_update(connection, pms_state, -1);
         }
 
         if (input_flags & PMS_HAS_INPUT_STDIN) {
