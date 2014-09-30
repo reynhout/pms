@@ -31,8 +31,6 @@
 struct options_t * options = NULL;
 struct pms_state_t * pms_state = NULL;
 
-static pthread_mutex_t status_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 void debug(const char * format, ...) {
 
     va_list ap;
@@ -94,6 +92,11 @@ static void signal_init() {
     signal(SIGTERM, signal_kill);
 }
 
+static void songlist_init() {
+    pms_state->queue = songlist_new();
+    pms_state->library = songlist_new();
+}
+
 int pms_get_pending_input_flags(struct mpd_connection * connection) {
 
     struct timeval tv;
@@ -147,13 +150,14 @@ int main(int argc, char** argv) {
     console_init(options->console_size);
     signal_init();
     input_reset();
+    songlist_init();
     console("%s %s (c) 2006-2014 Kim Tore Jensen <%s>", PACKAGE_NAME, PACKAGE_VERSION, PACKAGE_BUGREPORT);
 
     while(pms_state->running) {
 
         if (!connection) {
             if (connection = pms_mpd_connect(options->server, options->port, options->timeout)) {
-                pms_handle_mpd_idle_update(connection, pms_state, -1);
+                pms_handle_mpd_idle_update(connection, -1);
             }
         }
 
@@ -167,7 +171,7 @@ int main(int argc, char** argv) {
         if (input_flags & PMS_HAS_INPUT_MPD) {
             flags = mpd_recv_idle(connection, true);
             is_idle = false;
-            pms_handle_mpd_idle_update(connection, pms_state, -1);
+            pms_handle_mpd_idle_update(connection, flags);
         }
 
         if (input_flags & PMS_HAS_INPUT_STDIN) {

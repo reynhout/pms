@@ -18,10 +18,3 @@
  */
 
 #include <mpd/client.h>
-
-struct songlist_t;
-
-struct mpd_connection * pms_mpd_connect(const char * server, unsigned int port, unsigned int timeout);
-void pms_mpd_get_status(struct mpd_connection * connection);
-enum mpd_error pms_mpd_get_playlist(struct mpd_connection * connection, struct songlist_t * songlist);
-void pms_handle_mpd_idle_update(struct mpd_connection * connection, enum mpd_idle flags);

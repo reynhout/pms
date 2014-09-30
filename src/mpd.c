@@ -19,6 +19,8 @@
 
 #include "pms.h"
 
+extern struct pms_state_t * pms_state;
+
 struct mpd_connection * pms_mpd_connect(const char * server, unsigned int port, unsigned int timeout) {
 
     enum mpd_error status;
@@ -45,14 +47,33 @@ struct mpd_connection * pms_mpd_connect(const char * server, unsigned int port, 
     return connection;
 }
 
-void pms_mpd_get_status(struct mpd_connection * connection, struct pms_state_t * state) {
-    if (state->status) {
-        mpd_status_free(state->status);
+void pms_mpd_get_status(struct mpd_connection * connection) {
+
+    if (pms_state->status) {
+        mpd_status_free(pms_state->status);
     }
-    state->status = mpd_run_status(connection);
+    pms_state->status = mpd_run_status(connection);
 }
 
-void pms_handle_mpd_idle_update(struct mpd_connection * connection, struct pms_state_t * state, enum mpd_idle flags) {
+enum mpd_error pms_mpd_get_playlist(struct mpd_connection * connection, struct songlist_t * songlist) {
+
+    struct mpd_song *song;
+
+    songlist_clear(songlist);
+    songlist_reserve(songlist, mpd_status_get_queue_length(pms_state->status));
+
+    if (!mpd_send_list_queue_meta(connection)) {
+        return -1;
+    }
+
+    while ((song = mpd_recv_song(connection)) != NULL) {
+        songlist_add(songlist, song);
+    }
+
+    return mpd_connection_get_error(connection);
+}
+
+void pms_handle_mpd_idle_update(struct mpd_connection * connection, enum mpd_idle flags) {
 
     console("pms_handle_mpd_idle_update %d", flags);
 
@@ -82,7 +103,12 @@ void pms_handle_mpd_idle_update(struct mpd_connection * connection, struct pms_s
     }
 
     if (flags & (MPD_IDLE_QUEUE | MPD_IDLE_PLAYER | MPD_IDLE_MIXER | MPD_IDLE_OPTIONS)) {
-        pms_mpd_get_status(connection, state);
+        pms_mpd_get_status(connection);
+    }
+
+    if (flags & (MPD_IDLE_QUEUE)) {
+        // TODO: use mpd_send_queue_changes_meta()
+        pms_mpd_get_playlist(connection, pms_state->queue);
     }
 
     topbar_draw();

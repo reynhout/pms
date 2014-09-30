@@ -33,6 +33,8 @@
 #include "topbar.h"
 #include "input.h"
 #include "mpd.h"
+#include "song.h"
+#include "songlist.h"
 
 #define PMS_EXIT_SUCCESS 0
 #define PMS_EXIT_MEMORY 1
@@ -56,6 +58,8 @@ struct pms_state_t {
     /* Set to false when shutting down. */
     int running;
     struct mpd_status * status;
+    struct songlist_t * queue;
+    struct songlist_t * library;
 };
 
 /**
