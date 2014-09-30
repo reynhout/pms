@@ -23,6 +23,6 @@ struct pms_state_t;
 
 struct mpd_connection * pms_mpd_connect(const char * server, unsigned int port, unsigned int timeout);
 
-void pms_get_mpd_status(struct mpd_connection * connection, struct pms_state_t * state);
+void pms_mpd_get_status(struct mpd_connection * connection, struct pms_state_t * state);
 
 void pms_handle_mpd_idle_update(struct mpd_connection * connection, struct pms_state_t * state, enum mpd_idle flags);

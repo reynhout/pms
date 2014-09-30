@@ -29,8 +29,6 @@ int window_scroll(window_t * window, long delta) {
         return 0;
     }
 
-    pms_curses_lock();
-
     if (delta > 0) {
         npos = window->position + delta;
         if (npos + window->height > window->num_lines) {
@@ -48,8 +46,6 @@ int window_scroll(window_t * window, long delta) {
     window->position += delta;
     wscrl(window_main, delta);
     wrefresh(window_main);
-
-    pms_curses_unlock();
 
     return delta;
 

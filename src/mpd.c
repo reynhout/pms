@@ -45,7 +45,7 @@ struct mpd_connection * pms_mpd_connect(const char * server, unsigned int port, 
     return connection;
 }
 
-void pms_get_mpd_status(struct mpd_connection * connection, struct pms_state_t * state) {
+void pms_mpd_get_status(struct mpd_connection * connection, struct pms_state_t * state) {
     if (state->status) {
         mpd_status_free(state->status);
     }
@@ -82,10 +82,9 @@ void pms_handle_mpd_idle_update(struct mpd_connection * connection, struct pms_s
     }
 
     if (flags & (MPD_IDLE_QUEUE | MPD_IDLE_PLAYER | MPD_IDLE_MIXER | MPD_IDLE_OPTIONS)) {
-        pms_get_mpd_status(connection, state);
+        pms_mpd_get_status(connection, state);
     }
 
     topbar_draw();
 
 }
-

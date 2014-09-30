@@ -29,18 +29,11 @@ void topbar_draw() {
         return;
     }
 
-    pms_curses_lock();
-    pms_status_lock();
-
     mvwprintw(window_topbar, 0, 0, "%s %s %s [%s]",
             PACKAGE_NAME, PACKAGE_VERSION,
             topbar_playing_str(),
             topbar_mode_str());
     wrefresh(window_topbar);
-
-    pms_status_unlock();
-    pms_curses_unlock();
-
 }
 
 const char * topbar_mode_str() {

@@ -79,10 +79,8 @@ void shutdown() {
 
 void signal_resize(int signal) {
     console("Resized to %d x %d", LINES, COLS);
-    pms_curses_lock();
     curses_destroy_windows();
     curses_init_windows();
-    pms_curses_unlock();
 }
 
 void signal_kill(int signal) {
@@ -186,12 +184,4 @@ int main(int argc, char** argv) {
     curses_shutdown();
 
     return PMS_EXIT_SUCCESS;
-}
-
-void pms_status_lock() {
-    pthread_mutex_lock(&status_mutex);
-}
-
-void pms_status_unlock() {
-    pthread_mutex_unlock(&status_mutex);
 }

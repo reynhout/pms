@@ -82,11 +82,3 @@ void curses_shutdown() {
 int curses_get_input() {
     return wgetch(window_statusbar);
 }
-
-void pms_curses_lock() {
-    pthread_mutex_lock(&curses_mutex);
-}
-
-void pms_curses_unlock() {
-    pthread_mutex_unlock(&curses_mutex);
-}

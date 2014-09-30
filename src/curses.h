@@ -39,6 +39,3 @@ void curses_init_windows();
 void curses_destroy_windows();
 
 int curses_get_input();
-
-void pms_curses_lock();
-void pms_curses_unlock();

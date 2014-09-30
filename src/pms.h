@@ -72,13 +72,3 @@ void shutdown();
  * Print a debug message to stderr
  */
 void debug(const char * format, ...);
-
-/**
- * Lock MPD status object
- */
-void pms_status_lock();
-
-/**
- * Lock MPD status object
- */
-void pms_status_unlock();

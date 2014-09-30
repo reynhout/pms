@@ -65,8 +65,6 @@ void console(const char * format, ...) {
     time_t        t;
     va_list        ap;
 
-    pthread_mutex_lock(&console_mutex);
-
     line = new_logline();
 
     va_start(ap, format);
@@ -93,8 +91,6 @@ void console(const char * format, ...) {
     if (console_window->num_lines < console_window->height || console_window->position + console_window->height + 1 >= console_window->num_lines) {
         console_scroll(1);
     }
-
-    pthread_mutex_unlock(&console_mutex);
 }
 
 void console_draw_lines(long start, long end) {
@@ -102,8 +98,6 @@ void console_draw_lines(long start, long end) {
     long s;
     long ptr;
     logline_t * line;
-
-    pms_curses_lock();
 
     ptr = console_window->position + start;
     for (s = start; s <= end; s++) {
@@ -116,8 +110,6 @@ void console_draw_lines(long start, long end) {
     }
 
     wrefresh(window_main);
-
-    pms_curses_unlock();
 }
 
 int console_scroll(long delta) {
